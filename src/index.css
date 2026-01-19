@@ -1,0 +1,16 @@
+/**
+ * Main CSS Entry Point - Tu Crédito Frontend
+ * Importa todos los estilos globales en el orden correcto
+ */
+
+/* 1. Design Tokens (variables CSS) */
+@import './styles/tokens.css';
+
+/* 2. Global Styles (reset + base) */
+@import './styles/globals.css';
+
+/* 3. Breakpoints System */
+@import './styles/breakpoints.css';
+
+/* 4. Utility Classes */
+@import './styles/utilities.css';

@@ -1,0 +1,47 @@
+/**
+ * Navbar Styles - Tu Crédito Frontend
+ * 
+ * UI IMPLEMENTATION PROVIDED BY VERCEL v0 – PLACEHOLDER ONLY
+ * Este archivo será reemplazado cuando se integre el diseño de v0
+ */
+
+.navbar {
+  background-color: var(--color-neutral-900);
+  color: var(--color-neutral-50);
+  padding: var(--spacing-4) 0;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-neutral-50);
+}
+
+.menu {
+  display: flex;
+  gap: var(--spacing-4);
+  list-style: none;
+  align-items: center;
+}
+
+.menu a,
+.menu button {
+  color: var(--color-neutral-50);
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-base);
+  transition: background-color var(--transition-fast);
+}
+
+.menu a:hover,
+.menu button:hover {
+  background-color: var(--color-neutral-800);
+}

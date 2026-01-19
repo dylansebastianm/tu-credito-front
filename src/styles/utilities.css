@@ -1,0 +1,184 @@
+/**
+ * Utility Classes - Tu Crédito Frontend
+ * Clases utilitarias mínimas y reutilizables
+ * NO debe convertirse en un framework completo
+ */
+
+/* === Container === */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--spacing-4);
+  padding-right: var(--spacing-4);
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding-left: var(--spacing-6);
+    padding-right: var(--spacing-6);
+  }
+}
+
+/* === Stack (vertical spacing) === */
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.stack > * + * {
+  margin-top: var(--spacing-4);
+}
+
+.stack-sm > * + * {
+  margin-top: var(--spacing-2);
+}
+
+.stack-md > * + * {
+  margin-top: var(--spacing-6);
+}
+
+.stack-lg > * + * {
+  margin-top: var(--spacing-8);
+}
+
+/* === Inline (horizontal spacing) === */
+.inline {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
+.inline-sm {
+  gap: var(--spacing-2);
+}
+
+.inline-md {
+  gap: var(--spacing-6);
+}
+
+.inline-lg {
+  gap: var(--spacing-8);
+}
+
+/* === Grid === */
+.grid {
+  display: grid;
+  gap: var(--spacing-4);
+}
+
+.grid-sm {
+  gap: var(--spacing-2);
+}
+
+.grid-md {
+  gap: var(--spacing-6);
+}
+
+.grid-lg {
+  gap: var(--spacing-8);
+}
+
+/* === Screen Reader Only === */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* === Text utilities === */
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+}
+
+.text-lowercase {
+  text-transform: lowercase;
+}
+
+.text-capitalize {
+  text-transform: capitalize;
+}
+
+/* === Display utilities === */
+.hidden {
+  display: none;
+}
+
+.block {
+  display: block;
+}
+
+.inline-block {
+  display: inline-block;
+}
+
+.flex {
+  display: flex;
+}
+
+.inline-flex {
+  display: inline-flex;
+}
+
+.grid {
+  display: grid;
+}
+
+/* === Truncate === */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* === Full width/height === */
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+/* === Margin auto === */
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.my-auto {
+  margin-top: auto;
+  margin-bottom: auto;
+}

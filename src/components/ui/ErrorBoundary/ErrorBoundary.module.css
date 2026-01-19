@@ -1,0 +1,62 @@
+/**
+ * Error Boundary Styles - Tu Crédito Frontend
+ */
+
+.errorBoundary {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-4);
+  background-color: var(--color-neutral-50);
+}
+
+.content {
+  text-align: center;
+  max-width: 600px;
+  padding: var(--spacing-8);
+  background-color: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.content h1 {
+  color: var(--color-error);
+  margin-bottom: var(--spacing-4);
+}
+
+.content p {
+  color: var(--color-neutral-700);
+  margin-bottom: var(--spacing-6);
+}
+
+.details {
+  margin: var(--spacing-6) 0;
+  text-align: left;
+  background-color: var(--color-neutral-100);
+  padding: var(--spacing-4);
+  border-radius: var(--radius-base);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.details pre {
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-mono);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.button {
+  background-color: var(--color-primary-600);
+  color: white;
+  padding: var(--spacing-3) var(--spacing-6);
+  border-radius: var(--radius-base);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.button:hover {
+  background-color: var(--color-primary-700);
+}

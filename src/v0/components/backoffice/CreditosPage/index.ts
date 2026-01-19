@@ -1,0 +1,1 @@
+export { CreditosPage } from "./CreditosPage";
