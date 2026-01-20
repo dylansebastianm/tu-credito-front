@@ -1,37 +1,56 @@
 /**
  * Auth Service - Tu Crédito Frontend
- * Servicio de autenticación mock (temporal, usar localStorage)
+ * Servicio de autenticación conectado al backend
  * 
- * TODO: Integrar con backend real y reemplazar localStorage por httpOnly cookies
- * TODO: Implementar refresh token automático
  * SECURITY NOTE: localStorage NO es seguro para tokens en producción
+ * En producción, considerar usar httpOnly cookies
  */
 
-import type { LoginCredentials, AuthTokens, User } from '../types/auth';
+import { api } from './apiClient';
+import type { LoginCredentials, RegisterCredentials, AuthTokens, User, RegisterResponse } from '../types/auth';
 import { STORAGE_KEYS } from '../app/config/constants';
 
 /**
  * Servicio de autenticación
+ * 
+ * NOTA: Las contraseñas se envían en texto plano pero viajan por HTTPS (encriptadas en tránsito).
+ * El backend hashea automáticamente las contraseñas antes de guardarlas en la base de datos.
  */
 export const authService = {
   /**
    * Inicia sesión con credenciales
+   * Las credenciales viajan encriptadas por HTTPS.
    */
-  async login(_credentials: LoginCredentials): Promise<AuthTokens> {
-    // TODO: Implementar petición real al backend
-    // const tokens = await api.post<AuthTokens>('/auth/token/', credentials);
-    
-    // Mock temporal
-    const tokens: AuthTokens = {
-      access: 'mock_access_token_' + Date.now(),
-      refresh: 'mock_refresh_token_' + Date.now(),
-    };
+  async login(credentials: LoginCredentials): Promise<AuthTokens> {
+    const tokens = await api.post<AuthTokens>(
+      '/auth/token/',
+      credentials,
+      { requireAuth: false }
+    );
 
-    // Guardar tokens en localStorage (TEMPORAL)
+    // Guardar tokens en localStorage
     localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokens.access);
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh);
 
     return tokens;
+  },
+
+  /**
+   * Registra un nuevo usuario
+   * La contraseña se hashea automáticamente en el backend antes de guardar.
+   * Las credenciales viajan encriptadas por HTTPS.
+   * 
+   * IMPORTANTE: Solo los superusuarios pueden crear usuarios.
+   * Requiere autenticación JWT y que el usuario tenga is_superuser=true.
+   */
+  async register(credentials: RegisterCredentials): Promise<RegisterResponse> {
+    const response = await api.post<RegisterResponse>(
+      '/auth/register/',
+      credentials,
+      { requireAuth: true }  // Requiere autenticación
+    );
+
+    return response;
   },
 
   /**
@@ -66,29 +85,23 @@ export const authService = {
 
   /**
    * Obtiene información del usuario actual
-   * TODO: Implementar endpoint real del backend
    */
   async getCurrentUser(): Promise<User | null> {
-    // TODO: Implementar petición real
-    // const user = await api.get<User>('/auth/me/');
-    
-    // Mock temporal
     if (!this.isAuthenticated()) {
       return null;
     }
 
-    return {
-      id: 1,
-      username: 'admin',
-      email: 'admin@tucredito.com',
-      first_name: 'Admin',
-      last_name: 'User',
-    };
+    try {
+      const user = await api.get<User>('/auth/me/');
+      return user;
+    } catch {
+      // Si falla, retornar null (token inválido o expirado)
+      return null;
+    }
   },
 
   /**
    * Refresca el token de acceso
-   * TODO: Implementar refresh real
    */
   async refreshToken(): Promise<AuthTokens | null> {
     const refreshToken = this.getRefreshToken();
@@ -98,18 +111,16 @@ export const authService = {
     }
 
     try {
-      // TODO: Implementar petición real
-      // const tokens = await api.post<AuthTokens>('/auth/token/refresh/', {
-      //   refresh: refreshToken,
-      // });
-      
-      // Mock temporal
-      const tokens: AuthTokens = {
-        access: 'mock_access_token_' + Date.now(),
-        refresh: refreshToken, // Mantener el mismo refresh token
-      };
+      const tokens = await api.post<AuthTokens>(
+        '/auth/token/refresh/',
+        { refresh: refreshToken },
+        { requireAuth: false }
+      );
 
       localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokens.access);
+      if (tokens.refresh) {
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh);
+      }
       
       return tokens;
     } catch {

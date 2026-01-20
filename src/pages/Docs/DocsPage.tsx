@@ -220,20 +220,22 @@ export function DocsPage(): React.JSX.Element {
             </div>
             <div className={styles.cardContent}>
               <div className={styles.section}>
-                <h3 className={styles.sectionTitle}>Mock Data</h3>
+                <h3 className={styles.sectionTitle}>Datos del Backend</h3>
                 <p style={{ color: '#6b7280', marginBottom: '16px' }}>
-                  El sistema utiliza mock data para desarrollo. Los datos se encuentran
-                  en src/data/mock-data.ts.
+                  El sistema está conectado al backend Django. Todos los datos se obtienen
+                  desde la API REST en tiempo real.
                 </p>
                 <pre className={styles.codeBlock}>
-{`// src/data/mock-data.ts
-import { mockClientes, mockCreditos, mockBancos } from './mock-data';
+{`// Ejemplo de uso de servicios
+import { clientesService } from '../services/clientes.service';
+import { creditosService } from '../services/creditos.service';
+import { bancosService } from '../services/bancos.service';
 
-// Obtener estadísticas del dashboard
-const stats = getDashboardStats();
+// Obtener clientes
+const response = await clientesService.getAll({ page: 1, page_size: 20 });
 
-// Obtener actividad reciente
-const activity = getRecentActivity();`}
+// Obtener créditos
+const creditos = await creditosService.getAll({ page: 1 });`}
                 </pre>
               </div>
 

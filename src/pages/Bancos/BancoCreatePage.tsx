@@ -7,8 +7,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaArrowLeft, FaSave, FaTimes } from 'react-icons/fa';
 import { setDocumentMeta } from '../../utils/meta';
-import { type MockBanco } from '../../data/mock-data';
 import { ROUTES } from '../../app/config/constants';
+import { bancosService } from '../../services/bancos.service';
+import type { Banco, BancoCreate, BancoListItem } from '../../types/banco';
 import styles from './Bancos.module.css';
 
 /**
@@ -18,24 +19,26 @@ import styles from './Bancos.module.css';
 export function BancoCreatePage(): React.JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
-  const isEdit = location.state?.banco !== undefined;
-  const existingBanco = location.state?.banco as MockBanco | undefined;
+  const existingBanco = location.state?.banco as Banco | BancoListItem | undefined;
+  const isEdit = existingBanco !== undefined;
 
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState<Partial<MockBanco>>({
-    nombre: existingBanco?.nombre || '',
-    codigo: existingBanco?.codigo || '',
-    direccion: existingBanco?.direccion || '',
-    telefono: existingBanco?.telefono || '',
-    email: existingBanco?.email || '',
-    sitioWeb: existingBanco?.sitioWeb || '',
-    tasaInteresMin: existingBanco?.tasaInteresMin || 8,
-    tasaInteresMax: existingBanco?.tasaInteresMax || 20,
-    plazoMinimo: existingBanco?.plazoMinimo || 6,
-    plazoMaximo: existingBanco?.plazoMaximo || 60,
-    montoMinimo: existingBanco?.montoMinimo || 10000,
-    montoMaximo: existingBanco?.montoMaximo || 500000,
-    estado: existingBanco?.estado || 'activo',
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<BancoCreate>({
+    nombre: '',
+    codigo: '',
+    tipo: 'PRIVADO',
+    direccion: '',
+    telefono: '',
+    email: '',
+    sitio_web: '',
+    tasa_interes_min: undefined,
+    tasa_interes_max: undefined,
+    plazo_minimo: undefined,
+    plazo_maximo: undefined,
+    monto_minimo: undefined,
+    monto_maximo: undefined,
+    estado: 'activo',
   });
 
   useEffect(() => {
@@ -45,13 +48,106 @@ export function BancoCreatePage(): React.JSX.Element {
     });
   }, [isEdit]);
 
+  // Cargar datos del banco si está editando
+  useEffect(() => {
+    const loadBanco = async () => {
+      if (!isEdit || !existingBanco) return;
+
+      // Si es BancoListItem, necesitamos cargar el completo
+      if ('codigo' in existingBanco && existingBanco.codigo) {
+        // Ya tiene los datos básicos, pero cargamos el completo para asegurar
+        try {
+          const bancoCompleto = await bancosService.getById(existingBanco.id);
+          setFormData({
+            nombre: bancoCompleto.nombre,
+            codigo: bancoCompleto.codigo,
+            tipo: bancoCompleto.tipo,
+            direccion: bancoCompleto.direccion || '',
+            telefono: bancoCompleto.telefono || '',
+            email: bancoCompleto.email || '',
+            sitio_web: bancoCompleto.sitio_web || '',
+            tasa_interes_min: bancoCompleto.tasa_interes_min
+              ? parseFloat(bancoCompleto.tasa_interes_min)
+              : undefined,
+            tasa_interes_max: bancoCompleto.tasa_interes_max
+              ? parseFloat(bancoCompleto.tasa_interes_max)
+              : undefined,
+            plazo_minimo: bancoCompleto.plazo_minimo,
+            plazo_maximo: bancoCompleto.plazo_maximo,
+            monto_minimo: bancoCompleto.monto_minimo
+              ? parseFloat(bancoCompleto.monto_minimo)
+              : undefined,
+            monto_maximo: bancoCompleto.monto_maximo
+              ? parseFloat(bancoCompleto.monto_maximo)
+              : undefined,
+            estado: bancoCompleto.estado,
+          });
+        } catch (err) {
+          console.error('Error loading banco:', err);
+        }
+      }
+    };
+
+    loadBanco();
+  }, [isEdit, existingBanco]);
+
   const handleSave = async () => {
-    setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
-    // TODO: Implementar lógica real con servicio
-    setSaving(false);
-    navigate(ROUTES.BANCOS);
+    // Validaciones básicas
+    if (!formData.nombre || !formData.nombre.trim()) {
+      setError('El nombre del banco es requerido');
+      return;
+    }
+
+    if (!formData.codigo || !formData.codigo.trim()) {
+      setError('El código del banco es requerido');
+      return;
+    }
+
+    // Validar tasas
+    if (formData.tasa_interes_min && formData.tasa_interes_max) {
+      if (formData.tasa_interes_min > formData.tasa_interes_max) {
+        setError('La tasa mínima no puede ser mayor que la tasa máxima');
+        return;
+      }
+    }
+
+    // Validar plazos
+    if (formData.plazo_minimo && formData.plazo_maximo) {
+      if (formData.plazo_minimo > formData.plazo_maximo) {
+        setError('El plazo mínimo no puede ser mayor que el plazo máximo');
+        return;
+      }
+    }
+
+    // Validar montos
+    if (formData.monto_minimo && formData.monto_maximo) {
+      if (formData.monto_minimo > formData.monto_maximo) {
+        setError('El monto mínimo no puede ser mayor que el monto máximo');
+        return;
+      }
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      if (isEdit && existingBanco) {
+        await bancosService.updateFull(existingBanco.id, formData);
+      } else {
+        await bancosService.create(formData);
+      }
+
+      navigate(ROUTES.BANCOS);
+    } catch (err: any) {
+      setError(
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        'Error al guardar el banco. Por favor, intenta nuevamente.'
+      );
+      console.error('Error saving banco:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -74,100 +170,136 @@ export function BancoCreatePage(): React.JSX.Element {
         </p>
       </div>
 
+      {error && (
+        <div className={styles.alert}>
+          <p className={styles.alertText}>{error}</p>
+        </div>
+      )}
+
       <div className={styles.formCard}>
         <div className={styles.form}>
-          <div className={styles.formGrid}>
-            <div className={styles.formField}>
-              <label className={styles.formLabel}>
-                Nombre del Banco <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.nombre || ''}
-                onChange={(e) =>
-                  setFormData({ ...formData, nombre: e.target.value })
-                }
-                placeholder="Nombre del banco"
-                className={styles.formInput}
-              />
+          <div className={styles.formSection}>
+            <h3 className={styles.formSectionTitle}>Información General</h3>
+            <div className={styles.formGrid}>
+              <div className={styles.formField}>
+                <label className={styles.formLabel}>
+                  Nombre del Banco <span className={styles.required}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.nombre}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nombre: e.target.value })
+                  }
+                  placeholder="Nombre del banco"
+                  className={styles.formInput}
+                  required
+                />
+              </div>
+              <div className={styles.formField}>
+                <label className={styles.formLabel}>
+                  Código <span className={styles.required}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.codigo}
+                  onChange={(e) =>
+                    setFormData({ ...formData, codigo: e.target.value })
+                  }
+                  placeholder="Ej: BN001"
+                  className={styles.formInput}
+                  required
+                />
+              </div>
+              <div className={styles.formField}>
+                <label className={styles.formLabel}>
+                  Tipo <span className={styles.required}>*</span>
+                </label>
+                <select
+                  value={formData.tipo}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      tipo: e.target.value as 'PRIVADO' | 'GOBIERNO',
+                    })
+                  }
+                  className={styles.formSelect}
+                  required
+                >
+                  <option value="PRIVADO">Privado</option>
+                  <option value="GOBIERNO">Gobierno</option>
+                </select>
+              </div>
+              <div className={styles.formField}>
+                <label className={styles.formLabel}>Estado</label>
+                <select
+                  value={formData.estado || 'activo'}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      estado: e.target.value as 'activo' | 'inactivo',
+                    })
+                  }
+                  className={styles.formSelect}
+                >
+                  <option value="activo">Activo</option>
+                  <option value="inactivo">Inactivo</option>
+                </select>
+              </div>
+              <div className={`${styles.formField} ${styles.formFieldFull}`}>
+                <label className={styles.formLabel}>Dirección</label>
+                <input
+                  type="text"
+                  value={formData.direccion || ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, direccion: e.target.value })
+                  }
+                  placeholder="Dirección completa"
+                  className={styles.formInput}
+                />
+              </div>
             </div>
-            <div className={styles.formField}>
-              <label className={styles.formLabel}>
-                Código <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                value={formData.codigo || ''}
-                onChange={(e) =>
-                  setFormData({ ...formData, codigo: e.target.value })
-                }
-                placeholder="Ej: BN001"
-                className={styles.formInput}
-              />
-            </div>
-            <div className={styles.formField}>
-              <label className={styles.formLabel}>Estado</label>
-              <select
-                value={formData.estado || 'activo'}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    estado: e.target.value as MockBanco['estado'],
-                  })
-                }
-                className={styles.formSelect}
-              >
-                <option value="activo">Activo</option>
-                <option value="inactivo">Inactivo</option>
-              </select>
-            </div>
-            <div className={`${styles.formField} ${styles.formFieldFull}`}>
-              <label className={styles.formLabel}>Dirección</label>
-              <input
-                type="text"
-                value={formData.direccion || ''}
-                onChange={(e) =>
-                  setFormData({ ...formData, direccion: e.target.value })
-                }
-                placeholder="Dirección completa"
-                className={styles.formInput}
-              />
-            </div>
-            <div className={styles.formField}>
-              <label className={styles.formLabel}>Email</label>
-              <input
-                type="email"
-                value={formData.email || ''}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                placeholder="contacto@banco.com"
-                className={styles.formInput}
-              />
-            </div>
-            <div className={styles.formField}>
-              <label className={styles.formLabel}>Teléfono</label>
-              <input
-                type="text"
-                value={formData.telefono || ''}
-                onChange={(e) =>
-                  setFormData({ ...formData, telefono: e.target.value })
-                }
-                placeholder="+52 55 1234 5678"
-                className={styles.formInput}
-              />
-            </div>
-            <div className={styles.formField}>
-              <label className={styles.formLabel}>Sitio Web</label>
-              <input
-                type="text"
-                value={formData.sitioWeb || ''}
-                onChange={(e) =>
-                  setFormData({ ...formData, sitioWeb: e.target.value })
-                }
-                placeholder="https://www.banco.com"
-                className={styles.formInput}
-              />
+          </div>
+
+          <div className={styles.formSection}>
+            <h3 className={styles.formSectionTitle}>Contacto</h3>
+            <div className={styles.formGrid}>
+              <div className={styles.formField}>
+                <label className={styles.formLabel}>Email</label>
+                <input
+                  type="email"
+                  value={formData.email || ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  placeholder="contacto@banco.com"
+                  className={styles.formInput}
+                />
+              </div>
+              <div className={styles.formField}>
+                <label className={styles.formLabel}>Teléfono</label>
+                <input
+                  type="text"
+                  value={formData.telefono || ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, telefono: e.target.value })
+                  }
+                  placeholder="+52 55 1234 5678"
+                  className={styles.formInput}
+                />
+              </div>
+              <div className={styles.formField}>
+                <label className={styles.formLabel}>Sitio Web</label>
+                <input
+                  type="url"
+                  value={formData.sitio_web || ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, sitio_web: e.target.value })
+                  }
+                  placeholder="https://www.banco.com"
+                  className={styles.formInput}
+                />
+              </div>
             </div>
           </div>
 
@@ -178,12 +310,15 @@ export function BancoCreatePage(): React.JSX.Element {
                 <label className={styles.formLabel}>Tasa Mínima (%)</label>
                 <input
                   type="number"
-                  step="0.1"
-                  value={formData.tasaInteresMin || ''}
+                  step="0.01"
+                  min="0.01"
+                  value={formData.tasa_interes_min || ''}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      tasaInteresMin: Number(e.target.value),
+                      tasa_interes_min: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
                     })
                   }
                   className={styles.formInput}
@@ -193,12 +328,15 @@ export function BancoCreatePage(): React.JSX.Element {
                 <label className={styles.formLabel}>Tasa Máxima (%)</label>
                 <input
                   type="number"
-                  step="0.1"
-                  value={formData.tasaInteresMax || ''}
+                  step="0.01"
+                  min="0.01"
+                  value={formData.tasa_interes_max || ''}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      tasaInteresMax: Number(e.target.value),
+                      tasa_interes_max: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
                     })
                   }
                   className={styles.formInput}
@@ -208,11 +346,14 @@ export function BancoCreatePage(): React.JSX.Element {
                 <label className={styles.formLabel}>Plazo Mínimo (meses)</label>
                 <input
                   type="number"
-                  value={formData.plazoMinimo || ''}
+                  min="1"
+                  value={formData.plazo_minimo || ''}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      plazoMinimo: Number(e.target.value),
+                      plazo_minimo: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
                     })
                   }
                   className={styles.formInput}
@@ -222,11 +363,14 @@ export function BancoCreatePage(): React.JSX.Element {
                 <label className={styles.formLabel}>Plazo Máximo (meses)</label>
                 <input
                   type="number"
-                  value={formData.plazoMaximo || ''}
+                  min="1"
+                  value={formData.plazo_maximo || ''}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      plazoMaximo: Number(e.target.value),
+                      plazo_maximo: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
                     })
                   }
                   className={styles.formInput}
@@ -242,11 +386,15 @@ export function BancoCreatePage(): React.JSX.Element {
                 <label className={styles.formLabel}>Monto Mínimo (MXN)</label>
                 <input
                   type="number"
-                  value={formData.montoMinimo || ''}
+                  step="0.01"
+                  min="0.01"
+                  value={formData.monto_minimo || ''}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      montoMinimo: Number(e.target.value),
+                      monto_minimo: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
                     })
                   }
                   className={styles.formInput}
@@ -256,11 +404,15 @@ export function BancoCreatePage(): React.JSX.Element {
                 <label className={styles.formLabel}>Monto Máximo (MXN)</label>
                 <input
                   type="number"
-                  value={formData.montoMaximo || ''}
+                  step="0.01"
+                  min="0.01"
+                  value={formData.monto_maximo || ''}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      montoMaximo: Number(e.target.value),
+                      monto_maximo: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
                     })
                   }
                   className={styles.formInput}

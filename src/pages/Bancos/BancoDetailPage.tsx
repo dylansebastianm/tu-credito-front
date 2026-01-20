@@ -6,10 +6,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { setDocumentMeta } from '../../utils/meta';
-import { mockBancos, type MockBanco } from '../../data/mock-data';
 import { formatDate } from '../../utils/format';
 import { ROUTES } from '../../app/config/constants';
 import { BankDetailCard } from '../../components/domain/BankDetailCard/BankDetailCard';
+import { bancosService } from '../../services/bancos.service';
+import type { Banco } from '../../types/banco';
 import styles from './Bancos.module.css';
 
 /**
@@ -19,26 +20,53 @@ import styles from './Bancos.module.css';
 export function BancoDetailPage(): React.JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [banco, setBanco] = useState<MockBanco | null>(null);
+  const [banco, setBanco] = useState<Banco | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (id) {
-      const foundBanco = mockBancos.find((b) => b.id === id);
-      setBanco(foundBanco || null);
+    const loadBanco = async () => {
+      if (!id) return;
 
-      if (foundBanco) {
+      try {
+        setLoading(true);
+        setError(null);
+        const bancoData = await bancosService.getById(Number(id));
+        setBanco(bancoData);
+
         setDocumentMeta({
-          title: foundBanco.nombre,
-          description: `Detalle del banco ${foundBanco.nombre}`,
+          title: bancoData.nombre,
+          description: `Detalle del banco ${bancoData.nombre}`,
         });
+      } catch (err) {
+        setError('Error al cargar el banco. Por favor, intenta nuevamente.');
+        console.error('Error loading banco:', err);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
+
+    loadBanco();
   }, [id]);
 
-  if (!banco) {
+  if (loading) {
     return (
       <div className={styles.container}>
-        <p>Banco no encontrado</p>
+        <div className={styles.errorState}>
+          <p className={styles.errorText}>Cargando banco...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !banco) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.errorState}>
+          <p className={styles.errorText}>
+            {error || 'Banco no encontrado'}
+          </p>
+        </div>
       </div>
     );
   }
@@ -49,18 +77,18 @@ export function BancoDetailPage(): React.JSX.Element {
         name={banco.nombre}
         code={banco.codigo}
         isActive={banco.estado === 'activo'}
-        address={banco.direccion}
-        registrationDate={formatDate(banco.fechaRegistro)}
-        email={banco.email}
-        phone={banco.telefono}
-        website={banco.sitioWeb}
-        minRate={banco.tasaInteresMin}
-        maxRate={banco.tasaInteresMax}
-        minTerm={banco.plazoMinimo}
-        maxTerm={banco.plazoMaximo}
-        minAmount={banco.montoMinimo}
-        maxAmount={banco.montoMaximo}
-        activeCredits={banco.creditosActivos}
+        address={banco.direccion || '—'}
+        registrationDate={banco.created_at ? formatDate(banco.created_at) : '—'}
+        email={banco.email || '—'}
+        phone={banco.telefono || '—'}
+        website={banco.sitio_web}
+        minRate={banco.tasa_interes_min ? parseFloat(banco.tasa_interes_min) : 0}
+        maxRate={banco.tasa_interes_max ? parseFloat(banco.tasa_interes_max) : 0}
+        minTerm={banco.plazo_minimo || 0}
+        maxTerm={banco.plazo_maximo || 0}
+        minAmount={banco.monto_minimo ? parseFloat(banco.monto_minimo) : 0}
+        maxAmount={banco.monto_maximo ? parseFloat(banco.monto_maximo) : 0}
+        activeCredits={banco.creditos_activos || 0}
         onBack={() => navigate(ROUTES.BANCOS)}
         onEdit={() => navigate(ROUTES.BANCO_NUEVO, { state: { banco } })}
       />

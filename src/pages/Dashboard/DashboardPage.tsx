@@ -3,7 +3,7 @@
  * Integrado desde Vercel v0 - Adaptado para react-router-dom
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FaUsers,
@@ -17,15 +17,14 @@ import {
   FaPlus,
   FaExternalLinkAlt,
 } from 'react-icons/fa';
-import {
-  getDashboardStats,
-  getRecentActivity,
-  getRecentCreditos,
-} from '../../data/mock-data';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { setDocumentMeta } from '../../utils/meta';
 import { ROUTES } from '../../app/config/constants';
 import { Button } from '../../components/ui/Button/Button';
+import { clientesService } from '../../services/clientes.service';
+import { creditosService } from '../../services/creditos.service';
+import { bancosService } from '../../services/bancos.service';
+import type { CreditoListItem } from '../../types/credito';
 import styles from './DashboardPage.module.css';
 
 /**
@@ -34,21 +33,65 @@ import styles from './DashboardPage.module.css';
  */
 export function DashboardPage(): React.JSX.Element {
   const navigate = useNavigate();
-  const stats = getDashboardStats();
-  const recentActivity = getRecentActivity();
-  const recentCreditos = getRecentCreditos();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    clientesActivos: 0,
+    creditosActivos: 0,
+    montoTotalCreditos: 0,
+    bancosActivos: 0,
+  });
+  const [recentCreditos, setRecentCreditos] = useState<CreditoListItem[]>([]);
 
   useEffect(() => {
     setDocumentMeta({
       title: 'Dashboard',
       description: 'Panel principal de Tu Crédito',
     });
+
+    loadDashboardData();
   }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+
+      // Cargar datos en paralelo
+      const [clientesRes, creditosRes, bancosRes] = await Promise.all([
+        clientesService.getAll({ page_size: 1 }),
+        creditosService.getAll({ page_size: 1 }),
+        bancosService.getAll({ page_size: 1 }),
+      ]);
+
+      // Obtener créditos recientes
+      const creditosResFull = await creditosService.getAll({
+        page_size: 5,
+        ordering: '-fecha_registro',
+      });
+
+      // Calcular monto total de créditos
+      const montoTotal = creditosResFull.results.reduce((sum, credito) => {
+        return sum + parseFloat(credito.monto || '0');
+      }, 0);
+
+      setStats({
+        clientesActivos: clientesRes.count,
+        creditosActivos: creditosRes.count,
+        montoTotalCreditos: montoTotal,
+        bancosActivos: bancosRes.count,
+      });
+
+      setRecentCreditos(creditosResFull.results);
+    } catch (err) {
+      console.error('Error loading dashboard data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const statCards = [
     {
       label: 'Clientes Activos',
-      value: stats.clientesActivos.toString(),
+      value: loading ? '...' : stats.clientesActivos.toString(),
       icon: FaUsers,
       iconClass: styles.statIconBlue,
       trend: '+12%',
@@ -56,7 +99,7 @@ export function DashboardPage(): React.JSX.Element {
     },
     {
       label: 'Créditos Activos',
-      value: stats.creditosActivos.toString(),
+      value: loading ? '...' : stats.creditosActivos.toString(),
       icon: FaCreditCard,
       iconClass: styles.statIconGreen,
       trend: '+8%',
@@ -64,7 +107,7 @@ export function DashboardPage(): React.JSX.Element {
     },
     {
       label: 'Monto Total',
-      value: formatCurrency(stats.montoTotalCreditos),
+      value: loading ? '...' : formatCurrency(stats.montoTotalCreditos),
       icon: FaArrowUp,
       iconClass: styles.statIconPurple,
       trend: '+23%',
@@ -72,7 +115,7 @@ export function DashboardPage(): React.JSX.Element {
     },
     {
       label: 'Bancos',
-      value: stats.bancosActivos.toString(),
+      value: loading ? '...' : stats.bancosActivos.toString(),
       icon: FaBuilding,
       iconClass: styles.statIconOrange,
       trend: '0%',
@@ -81,40 +124,17 @@ export function DashboardPage(): React.JSX.Element {
   ];
 
   const getEstadoBadgeClass = (estado: string) => {
-    switch (estado) {
+    switch (estado?.toLowerCase()) {
       case 'activo':
+      case 'aprobado':
         return styles.badgeGreen;
       case 'pendiente':
         return styles.badgeYellow;
-      case 'aprobado':
-        return styles.badgeBlue;
       case 'rechazado':
       case 'vencido':
         return styles.badgeRed;
       default:
         return styles.badgeBlue;
-    }
-  };
-
-  const getActivityIconClass = (type: string) => {
-    switch (type) {
-      case 'credito':
-        return styles.activityIconGreen;
-      case 'cliente':
-        return styles.activityIconBlue;
-      default:
-        return styles.activityIconYellow;
-    }
-  };
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'credito':
-        return FaCreditCard;
-      case 'cliente':
-        return FaUserPlus;
-      default:
-        return FaFileAlt;
     }
   };
 
@@ -199,39 +219,57 @@ export function DashboardPage(): React.JSX.Element {
               Ver todos
             </Button>
           </div>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Cliente</th>
-                <th>Monto</th>
-                <th>Estado</th>
-                <th>Fecha</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentCreditos.slice(0, 5).map((credito) => (
-                <tr key={credito.id}>
-                  <td>
-                    <div className={styles.clientName}>
-                      {credito.clienteNombre}
-                    </div>
-                  </td>
-                  <td>{formatCurrency(credito.monto)}</td>
-                  <td>
-                    <span
-                      className={`${styles.badge} ${getEstadoBadgeClass(credito.estado)}`}
-                    >
-                      {credito.estado}
-                    </span>
-                  </td>
-                  <td>{formatDate(credito.fechaSolicitud)}</td>
+          {loading ? (
+            <div className={styles.loadingState}>
+              <p>Cargando créditos...</p>
+            </div>
+          ) : recentCreditos.length === 0 ? (
+            <div className={styles.emptyState}>
+              <FaCreditCard className={styles.emptyIcon} />
+              <p className={styles.emptyText}>No hay créditos registrados</p>
+              <Button
+                variant="primary"
+                onClick={() => navigate(ROUTES.CREDITO_NUEVO)}
+                leftIcon={<FaPlus />}
+              >
+                Crear primer crédito
+              </Button>
+            </div>
+          ) : (
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Monto</th>
+                  <th>Estado</th>
+                  <th>Fecha</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {recentCreditos.map((credito) => (
+                  <tr key={credito.id}>
+                    <td>
+                      <div className={styles.clientName}>
+                        {credito.cliente_nombre}
+                      </div>
+                    </td>
+                    <td>{formatCurrency(parseFloat(credito.monto || '0'))}</td>
+                    <td>
+                      <span
+                        className={`${styles.badge} ${getEstadoBadgeClass(credito.tipo_credito_display || '')}`}
+                      >
+                        {credito.tipo_credito_display || credito.tipo_credito}
+                      </span>
+                    </td>
+                    <td>{formatDate(credito.fecha_registro)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
-        {/* Recent Activity */}
+        {/* Recent Activity - Placeholder */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>
@@ -247,24 +285,12 @@ export function DashboardPage(): React.JSX.Element {
               Actividad Reciente
             </h2>
           </div>
-          <ul className={styles.activityList}>
-            {recentActivity.map((activity) => {
-              const Icon = getActivityIcon(activity.type);
-              return (
-                <li key={activity.id} className={styles.activityItem}>
-                  <div
-                    className={`${styles.activityIcon} ${getActivityIconClass(activity.type)}`}
-                  >
-                    <Icon className={styles.activityIconSvg} />
-                  </div>
-                  <div className={styles.activityContent}>
-                    <p className={styles.activityText}>{activity.message}</p>
-                    <p className={styles.activityTime}>{activity.time}</p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <div className={styles.emptyState}>
+            <FaFileAlt className={styles.emptyIcon} />
+            <p className={styles.emptyText}>
+              La actividad reciente se mostrará aquí
+            </p>
+          </div>
         </div>
       </div>
     </div>

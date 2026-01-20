@@ -18,7 +18,7 @@ import styles from './LoginPage.module.css';
  */
 export function LoginPage(): React.JSX.Element {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -42,15 +42,11 @@ export function LoginPage(): React.JSX.Element {
     setLoading(true);
 
     try {
-      // Mock login - acepta cualquier credenciales de prueba
-      if (email === 'admin@tucredito.com' && password === 'admin123') {
-        await authService.login({ username: email, password });
-        navigate(ROUTES.DASHBOARD);
-      } else {
-        setError('Credenciales incorrectas. Usa: admin@tucredito.com / admin123');
-      }
+      await authService.login({ username, password });
+      navigate(ROUTES.DASHBOARD);
     } catch (err) {
-      setError('Error al iniciar sesión');
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -77,19 +73,20 @@ export function LoginPage(): React.JSX.Element {
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.field}>
-              <label htmlFor="email" className={styles.label}>
-                Correo electronico
+              <label htmlFor="username" className={styles.label}>
+                Usuario
               </label>
               <div className={styles.inputWrapper}>
                 <FaEnvelope className={styles.inputIcon} />
                 <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@tucredito.com"
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Ingresa tu usuario"
                   required
                   className={styles.input}
+                  autoComplete="username"
                 />
               </div>
             </div>
@@ -105,9 +102,10 @@ export function LoginPage(): React.JSX.Element {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="********"
+                  placeholder="Ingresa tu contraseña"
                   required
                   className={styles.input}
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -135,14 +133,6 @@ export function LoginPage(): React.JSX.Element {
           </form>
         </div>
 
-        <div className={styles.footer}>
-          <div className={styles.credentials}>
-            <p className={styles.credentialsTitle}>Credenciales de prueba</p>
-            <p className={styles.credentialsText}>
-              <code>admin@tucredito.com</code> / <code>admin123</code>
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );

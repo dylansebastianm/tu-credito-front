@@ -457,6 +457,61 @@
 .paginationButtons {
   display: flex;
   gap: 8px;
+  align-items: center;
+}
+
+.paginationButton {
+  padding: 8px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.paginationButton:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.paginationButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.paginationInfo {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 12px;
+}
+
+/* Error States */
+.errorState {
+  padding: 32px;
+  text-align: center;
+}
+
+.errorText {
+  font-size: 0.9375rem;
+  color: #dc2626;
+  margin: 0;
+}
+
+.alert {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+}
+
+.alertText {
+  font-size: 0.875rem;
+  color: #991b1b;
+  margin: 0;
 }
 
 /* Detail Grid */

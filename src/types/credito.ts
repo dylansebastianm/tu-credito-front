@@ -13,8 +13,9 @@ export interface Credito {
   cliente: number; // ID del cliente
   cliente_info?: ClienteListItem; // Información completa del cliente (solo en detail)
   descripcion: string;
-  pago_minimo: string; // Decimal como string desde el backend
-  pago_maximo: string; // Decimal como string desde el backend
+  monto: string; // Decimal como string - Monto total del crédito (importe otorgado)
+  pago_minimo: string; // Decimal como string - Cuota mínima mensual
+  pago_maximo: string; // Decimal como string - Cuota máxima mensual
   plazo_meses: number;
   fecha_registro: string; // ISO datetime string
   banco: number; // ID del banco
@@ -35,8 +36,9 @@ export interface CreditoListItem {
   id: number;
   cliente_nombre: string;
   descripcion: string;
-  pago_minimo: string;
-  pago_maximo: string;
+  monto: string; // Decimal como string - Monto total del crédito
+  pago_minimo: string; // Decimal como string - Cuota mínima mensual
+  pago_maximo: string; // Decimal como string - Cuota máxima mensual
   plazo_meses: number;
   fecha_registro: string; // ISO datetime string
   banco_nombre: string;
@@ -53,8 +55,9 @@ export interface CreditoListItem {
 export interface CreditoCreate {
   cliente: number;
   descripcion: string;
-  pago_minimo: string; // Decimal como string (ej: "1000.00")
-  pago_maximo: string; // Decimal como string (ej: "5000.00")
+  monto: string; // Decimal como string - Monto total del crédito (ej: "100000.00")
+  pago_minimo: string; // Decimal como string - Cuota mínima mensual (ej: "1000.00")
+  pago_maximo: string; // Decimal como string - Cuota máxima mensual (ej: "5000.00")
   plazo_meses: number;
   banco: number;
   tipo_credito: 'AUTOMOTRIZ' | 'HIPOTECARIO' | 'COMERCIAL';

@@ -4,7 +4,7 @@
  */
 
 import { api } from './apiClient';
-import type { Banco, BancoCreate, BancoUpdate } from '../types/banco';
+import type { Banco, BancoCreate, BancoUpdate, BancoListItem } from '../types/banco';
 import type { PaginatedResponse } from '../types/api';
 
 /**
@@ -15,6 +15,7 @@ export interface BancosListParams {
   page_size?: number;
   search?: string;
   tipo?: 'PRIVADO' | 'GOBIERNO';
+  estado?: 'activo' | 'inactivo';
   ordering?: string;
 }
 
@@ -25,16 +26,17 @@ export const bancosService = {
   /**
    * Obtiene lista paginada de bancos
    */
-  async getAll(params?: BancosListParams): Promise<PaginatedResponse<Banco>> {
+  async getAll(params?: BancosListParams): Promise<PaginatedResponse<BancoListItem>> {
     const queryParams: Record<string, string | number> = {};
     
     if (params?.page) queryParams.page = params.page;
     if (params?.page_size) queryParams.page_size = params.page_size;
     if (params?.search) queryParams.search = params.search;
     if (params?.tipo) queryParams.tipo = params.tipo;
+    if (params?.estado) queryParams.estado = params.estado;
     if (params?.ordering) queryParams.ordering = params.ordering;
 
-    return api.get<PaginatedResponse<Banco>>('/bancos/', {
+    return api.get<PaginatedResponse<BancoListItem>>('/bancos/', {
       params: queryParams,
     });
   },

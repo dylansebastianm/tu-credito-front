@@ -12,10 +12,11 @@ import {
   HiOutlineTrash,
 } from 'react-icons/hi';
 import { setDocumentMeta } from '../../utils/meta';
-import { mockBancos, type MockBanco } from '../../data/mock-data';
 import { formatPercent, getEstadoLabel } from '../../utils/format';
 import { ROUTES } from '../../app/config/constants';
 import { Table } from '../../components/ui/Table/Table';
+import { bancosService } from '../../services/bancos.service';
+import type { BancoListItem } from '../../types/banco';
 import styles from './Bancos.module.css';
 
 /**
@@ -24,9 +25,13 @@ import styles from './Bancos.module.css';
  */
 export function BancosListPage(): React.JSX.Element {
   const navigate = useNavigate();
-  const [bancos, setBancos] = useState<MockBanco[]>(mockBancos);
+  const [bancos, setBancos] = useState<BancoListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState<string>('all');
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     setDocumentMeta({
@@ -35,17 +40,35 @@ export function BancosListPage(): React.JSX.Element {
     });
   }, []);
 
-  const filteredBancos = useMemo(() => {
-    return bancos.filter((banco) => {
-      const matchesSearch =
-        banco.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        banco.codigo.toLowerCase().includes(searchTerm.toLowerCase());
+  // Cargar bancos desde el backend
+  useEffect(() => {
+    const loadBancos = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await bancosService.getAll({
+          page: currentPage,
+          page_size: 20,
+          search: searchTerm || undefined,
+          estado: filterEstado !== 'all' ? (filterEstado as 'activo' | 'inactivo') : undefined,
+        });
+        setBancos(response.results);
+        setTotalCount(response.count);
+      } catch (err) {
+        setError('Error al cargar los bancos. Por favor, intenta nuevamente.');
+        console.error('Error loading bancos:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      const matchesEstado = filterEstado === 'all' || banco.estado === filterEstado;
+    // Debounce para la búsqueda
+    const timeoutId = setTimeout(() => {
+      loadBancos();
+    }, 300);
 
-      return matchesSearch && matchesEstado;
-    });
-  }, [bancos, searchTerm, filterEstado]);
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, filterEstado, currentPage]);
 
   const getEstadoBadgeClass = (estado: string) => {
     switch (estado) {
@@ -58,19 +81,53 @@ export function BancosListPage(): React.JSX.Element {
     }
   };
 
-  const handleViewDetail = (banco: MockBanco) => {
+  const handleViewDetail = (banco: BancoListItem) => {
     navigate(ROUTES.BANCO_DETAIL(banco.id));
   };
 
-  const handleEdit = (banco: MockBanco) => {
+  const handleEdit = (banco: BancoListItem) => {
     navigate(ROUTES.BANCO_NUEVO, { state: { banco } });
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: number) => {
     if (window.confirm('¿Está seguro de eliminar este banco?')) {
-      setBancos(bancos.filter((b) => b.id !== id));
+      try {
+        await bancosService.delete(id);
+        // Recargar la lista
+        const response = await bancosService.getAll({
+          page: currentPage,
+          page_size: 20,
+          search: searchTerm || undefined,
+          estado: filterEstado !== 'all' ? (filterEstado as 'activo' | 'inactivo') : undefined,
+        });
+        setBancos(response.results);
+        setTotalCount(response.count);
+      } catch (err) {
+        alert('Error al eliminar el banco. Por favor, intenta nuevamente.');
+        console.error('Error deleting banco:', err);
+      }
     }
   };
+
+  if (loading && bancos.length === 0) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.errorState}>
+          <p className={styles.errorText}>Cargando bancos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && bancos.length === 0) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.errorState}>
+          <p className={styles.errorText}>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -116,7 +173,32 @@ export function BancosListPage(): React.JSX.Element {
             { value: 'inactivo', label: 'Inactivo' },
           ],
         }}
-        footer={<>Mostrando {filteredBancos.length} de {bancos.length} bancos</>}
+        footer={
+          <>
+            Mostrando {bancos.length} de {totalCount} bancos
+            {totalCount > 20 && (
+              <div className={styles.paginationButtons}>
+                <button
+                  className={styles.paginationButton}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </button>
+                <span className={styles.paginationInfo}>
+                  Página {currentPage}
+                </span>
+                <button
+                  className={styles.paginationButton}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  disabled={bancos.length < 20}
+                >
+                  Siguiente
+                </button>
+              </div>
+            )}
+          </>
+        }
       >
         <thead>
           <tr>
@@ -129,7 +211,7 @@ export function BancosListPage(): React.JSX.Element {
           </tr>
         </thead>
         <tbody>
-          {filteredBancos.length === 0 ? (
+          {bancos.length === 0 ? (
             <tr>
               <td colSpan={6}>
                 <div className={styles.emptyState}>
@@ -142,22 +224,23 @@ export function BancosListPage(): React.JSX.Element {
               </td>
             </tr>
           ) : (
-            filteredBancos.map((banco) => (
+            bancos.map((banco) => (
               <tr key={banco.id}>
                 <td>
                   <span className={styles.cellPrimary}>{banco.nombre}</span>
                 </td>
                 <td className={styles.cellCode}>{banco.codigo}</td>
                 <td>
-                  {formatPercent(banco.tasaInteresMin)} -{' '}
-                  {formatPercent(banco.tasaInteresMax)}
+                  {banco.tasa_interes_min && banco.tasa_interes_max
+                    ? `${formatPercent(parseFloat(banco.tasa_interes_min))} - ${formatPercent(parseFloat(banco.tasa_interes_max))}`
+                    : '—'}
                 </td>
-                <td>{banco.creditosActivos}</td>
+                <td>{banco.creditos_activos || 0}</td>
                 <td>
                   <span
                     className={`${styles.badge} ${getEstadoBadgeClass(banco.estado)}`}
                   >
-                    {getEstadoLabel(banco.estado)}
+                    {banco.estado_display || getEstadoLabel(banco.estado)}
                   </span>
                 </td>
                 <td>

@@ -7,13 +7,13 @@ import { ENV } from '../app/config/env';
 import { ApiError } from '../utils/error';
 import type { ApiRequestOptions, ApiErrorResponse } from '../types/api';
 import { buildQueryString } from '../utils/queryParams';
+import { STORAGE_KEYS } from '../app/config/constants';
 
 /**
  * Obtiene el token de autenticación
  */
 function getAuthToken(): string | null {
-  // TODO: Integrar con auth service
-  return localStorage.getItem('tu_credito_auth_token');
+  return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
 }
 
 /**
