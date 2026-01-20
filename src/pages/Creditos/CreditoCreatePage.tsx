@@ -7,9 +7,15 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaArrowLeft, FaSave, FaTimes } from 'react-icons/fa';
 import { setDocumentMeta } from '../../utils/meta';
-import { mockClientes, mockBancos, type MockCredito } from '../../data/mock-data';
+import { creditosService } from '../../services/creditos.service';
+import { clientesService } from '../../services/clientes.service';
+import { bancosService } from '../../services/bancos.service';
+import type { CreditoCreate, Credito, CreditoListItem } from '../../types/credito';
+import type { ClienteListItem } from '../../types/cliente';
+import type { Banco } from '../../types/banco';
 import { formatCurrency, calculateCuotaMensual, calculateMontoTotal } from '../../utils/format';
 import { ROUTES } from '../../app/config/constants';
+import { ApiError } from '../../utils/error';
 import styles from './Creditos.module.css';
 
 /**
@@ -19,22 +25,78 @@ import styles from './Creditos.module.css';
 export function CreditoCreatePage(): React.JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
-  const isEdit = location.state?.credito !== undefined;
-  const existingCredito = location.state?.credito as MockCredito | undefined;
+  const existingCredito = location.state?.credito as Credito | CreditoListItem | undefined;
+  const isEdit = existingCredito !== undefined;
 
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState<Partial<MockCredito>>({
-    clienteId: existingCredito?.clienteId || '',
-    bancoId: existingCredito?.bancoId || '',
-    monto: existingCredito?.monto || 0,
-    tasaInteres: existingCredito?.tasaInteres || 12,
-    plazoMeses: existingCredito?.plazoMeses || 12,
-    estado: existingCredito?.estado || 'pendiente',
-    proposito: existingCredito?.proposito || '',
-    observaciones: existingCredito?.observaciones || '',
-    cuotaMensual: existingCredito?.cuotaMensual || 0,
-    montoTotal: existingCredito?.montoTotal || 0,
+  const [error, setError] = useState<string | null>(null);
+  const [clientes, setClientes] = useState<ClienteListItem[]>([]);
+  const [bancos, setBancos] = useState<Banco[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
+
+  const [formData, setFormData] = useState<CreditoCreate>({
+    cliente: 0,
+    banco: 0,
+    descripcion: '',
+    pago_minimo: '',
+    pago_maximo: '',
+    plazo_meses: 12,
+    tipo_credito: 'COMERCIAL',
+    tasa_interes: '12.00', // Tasa por defecto 12%
   });
+
+  // Cargar opciones de clientes y bancos
+  useEffect(() => {
+    const loadOptions = async () => {
+      setLoadingOptions(true);
+      try {
+        const [clientesRes, bancosRes] = await Promise.all([
+          clientesService.getAll({ page_size: 100, ordering: 'nombre_completo' }),
+          bancosService.getAll({ page_size: 100, ordering: 'nombre' }),
+        ]);
+        setClientes(clientesRes.results);
+        setBancos(bancosRes.results);
+      } catch (err) {
+        console.error('Error loading options:', err);
+        setError('Error al cargar clientes y bancos');
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+
+    loadOptions();
+  }, []);
+
+  // Cargar datos del crédito si estamos editando
+  useEffect(() => {
+    const loadCredito = async () => {
+      if (isEdit && existingCredito && 'id' in existingCredito) {
+        try {
+          // Si es CreditoListItem, necesitamos cargar el detalle completo
+          const fullCredito =
+            'banco_info' in existingCredito || 'cliente_info' in existingCredito
+              ? (existingCredito as Credito)
+              : await creditosService.getById(existingCredito.id);
+
+          setFormData({
+            cliente: fullCredito.cliente,
+            banco: fullCredito.banco,
+            descripcion: fullCredito.descripcion,
+            pago_minimo: fullCredito.pago_minimo,
+            pago_maximo: fullCredito.pago_maximo,
+            plazo_meses: fullCredito.plazo_meses,
+            tipo_credito: fullCredito.tipo_credito,
+            tasa_interes: fullCredito.tasa_interes,
+          });
+        } catch (err) {
+          console.error('Error loading credito for edit:', err);
+          setError('Error al cargar los datos del crédito');
+        }
+      }
+    };
+
+    loadCredito();
+  }, [isEdit, existingCredito]);
 
   useEffect(() => {
     setDocumentMeta({
@@ -43,30 +105,79 @@ export function CreditoCreatePage(): React.JSX.Element {
     });
   }, [isEdit]);
 
-  useEffect(() => {
-    if (formData.monto && formData.tasaInteres && formData.plazoMeses) {
-      const cuota = calculateCuotaMensual(
-        formData.monto,
-        formData.tasaInteres,
-        formData.plazoMeses
-      );
-      const total = calculateMontoTotal(cuota, formData.plazoMeses);
-      setFormData((prev) => ({
-        ...prev,
-        cuotaMensual: cuota,
-        montoTotal: total,
-      }));
-    }
-  }, [formData.monto, formData.tasaInteres, formData.plazoMeses]);
-
   const handleSave = async () => {
-    setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    // Validaciones básicas
+    if (!formData.cliente || formData.cliente === 0) {
+      setError('Debe seleccionar un cliente');
+      return;
+    }
 
-    // TODO: Implementar lógica real con servicio
-    setSaving(false);
-    navigate(ROUTES.CREDITOS);
+    if (!formData.banco || formData.banco === 0) {
+      setError('Debe seleccionar un banco');
+      return;
+    }
+
+    if (!formData.descripcion.trim()) {
+      setError('La descripción es requerida');
+      return;
+    }
+
+    if (!formData.pago_minimo || parseFloat(formData.pago_minimo) <= 0) {
+      setError('El pago mínimo debe ser mayor a 0');
+      return;
+    }
+
+    if (!formData.pago_maximo || parseFloat(formData.pago_maximo) <= 0) {
+      setError('El pago máximo debe ser mayor a 0');
+      return;
+    }
+
+    if (parseFloat(formData.pago_minimo) > parseFloat(formData.pago_maximo)) {
+      setError('El pago mínimo no puede ser mayor al pago máximo');
+      return;
+    }
+
+    if (!formData.plazo_meses || formData.plazo_meses <= 0) {
+      setError('El plazo en meses debe ser mayor a 0');
+      return;
+    }
+
+    if (!formData.tasa_interes || parseFloat(formData.tasa_interes) <= 0) {
+      setError('La tasa de interés debe ser mayor a 0');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      if (isEdit && existingCredito && 'id' in existingCredito) {
+        await creditosService.update(existingCredito.id, formData);
+      } else {
+        await creditosService.create(formData);
+      }
+      navigate(ROUTES.CREDITOS);
+    } catch (err) {
+      const errorMessage =
+        err instanceof ApiError
+          ? err.message
+          : 'Error al guardar el crédito. Por favor, intenta nuevamente.';
+      setError(errorMessage);
+      console.error('Error saving credito:', err);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  // Calcular valores financieros para mostrar (preview antes de guardar)
+  // El backend calculará estos valores automáticamente al guardar
+  const pagoMaximoNum = parseFloat(formData.pago_maximo) || 0;
+  const tasaInteresNum = parseFloat(formData.tasa_interes) || 12;
+  const cuotaMensual =
+    pagoMaximoNum > 0 && formData.plazo_meses > 0 && tasaInteresNum > 0
+      ? calculateCuotaMensual(pagoMaximoNum, tasaInteresNum, formData.plazo_meses)
+      : 0;
+  const montoTotal = cuotaMensual > 0 ? calculateMontoTotal(cuotaMensual, formData.plazo_meses) : 0;
 
   return (
     <div className={styles.container}>
@@ -110,6 +221,12 @@ export function CreditoCreatePage(): React.JSX.Element {
 
       <div className={styles.formCard}>
         <div className={styles.form}>
+          {error && (
+            <div className={styles.alert}>
+              <p className={styles.alertText}>{error}</p>
+            </div>
+          )}
+
           <div className={styles.formSection}>
             <h3 className={styles.formSectionTitle}>Información del Crédito</h3>
             <div className={styles.formGrid}>
@@ -118,16 +235,18 @@ export function CreditoCreatePage(): React.JSX.Element {
                   Cliente <span className={styles.required}>*</span>
                 </label>
                 <select
-                  value={formData.clienteId || ''}
+                  value={formData.cliente || ''}
                   onChange={(e) =>
-                    setFormData({ ...formData, clienteId: e.target.value })
+                    setFormData({ ...formData, cliente: parseInt(e.target.value, 10) })
                   }
                   className={styles.formSelect}
+                  disabled={loadingOptions}
+                  required
                 >
-                  <option value="">Seleccionar cliente</option>
-                  {mockClientes.map((c) => (
+                  <option value="0">Seleccionar cliente</option>
+                  {clientes.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.nombre} {c.apellido}
+                      {c.nombre_completo}
                     </option>
                   ))}
                 </select>
@@ -137,19 +256,58 @@ export function CreditoCreatePage(): React.JSX.Element {
                   Banco <span className={styles.required}>*</span>
                 </label>
                 <select
-                  value={formData.bancoId || ''}
+                  value={formData.banco || ''}
                   onChange={(e) =>
-                    setFormData({ ...formData, bancoId: e.target.value })
+                    setFormData({ ...formData, banco: parseInt(e.target.value, 10) })
                   }
                   className={styles.formSelect}
+                  disabled={loadingOptions}
+                  required
                 >
-                  <option value="">Seleccionar banco</option>
-                  {mockBancos.map((b) => (
+                  <option value="0">Seleccionar banco</option>
+                  {bancos.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.nombre}
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className={styles.formField}>
+                <label className={styles.formLabel}>
+                  Tipo de Crédito <span className={styles.required}>*</span>
+                </label>
+                <select
+                  value={formData.tipo_credito}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      tipo_credito: e.target.value as 'AUTOMOTRIZ' | 'HIPOTECARIO' | 'COMERCIAL',
+                    })
+                  }
+                  className={styles.formSelect}
+                  required
+                >
+                  <option value="AUTOMOTRIZ">Automotriz</option>
+                  <option value="HIPOTECARIO">Hipotecario</option>
+                  <option value="COMERCIAL">Comercial</option>
+                </select>
+              </div>
+            </div>
+            <div className={styles.formGrid}>
+              <div className={`${styles.formField} ${styles.formFieldFull}`}>
+                <label className={styles.formLabel}>
+                  Descripción <span className={styles.required}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.descripcion}
+                  onChange={(e) =>
+                    setFormData({ ...formData, descripcion: e.target.value })
+                  }
+                  placeholder="Descripción del crédito"
+                  className={styles.formInput}
+                  required
+                />
               </div>
             </div>
           </div>
@@ -159,34 +317,36 @@ export function CreditoCreatePage(): React.JSX.Element {
             <div className={styles.formGrid}>
               <div className={styles.formField}>
                 <label className={styles.formLabel}>
-                  Monto (MXN) <span className={styles.required}>*</span>
+                  Pago Mínimo (MXN) <span className={styles.required}>*</span>
                 </label>
                 <input
                   type="number"
-                  value={formData.monto || ''}
+                  step="0.01"
+                  min="0.01"
+                  value={formData.pago_minimo}
                   onChange={(e) =>
-                    setFormData({ ...formData, monto: Number(e.target.value) })
+                    setFormData({ ...formData, pago_minimo: e.target.value })
                   }
                   placeholder="0.00"
                   className={styles.formInput}
+                  required
                 />
               </div>
               <div className={styles.formField}>
                 <label className={styles.formLabel}>
-                  Tasa de Interés (%) <span className={styles.required}>*</span>
+                  Pago Máximo (MXN) <span className={styles.required}>*</span>
                 </label>
                 <input
                   type="number"
-                  step="0.1"
-                  value={formData.tasaInteres || ''}
+                  step="0.01"
+                  min="0.01"
+                  value={formData.pago_maximo}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      tasaInteres: Number(e.target.value),
-                    })
+                    setFormData({ ...formData, pago_maximo: e.target.value })
                   }
-                  placeholder="12.0"
+                  placeholder="0.00"
                   className={styles.formInput}
+                  required
                 />
               </div>
               <div className={styles.formField}>
@@ -195,95 +355,60 @@ export function CreditoCreatePage(): React.JSX.Element {
                 </label>
                 <input
                   type="number"
-                  value={formData.plazoMeses || ''}
+                  min="1"
+                  value={formData.plazo_meses}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      plazoMeses: Number(e.target.value),
+                      plazo_meses: parseInt(e.target.value, 10) || 0,
                     })
                   }
                   placeholder="12"
                   className={styles.formInput}
+                  required
                 />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>Estado</label>
-                <select
-                  value={formData.estado || 'pendiente'}
+                <label className={styles.formLabel}>
+                  Tasa de Interés Anual (%) <span className={styles.required}>*</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={formData.tasa_interes}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      estado: e.target.value as MockCredito['estado'],
-                    })
+                    setFormData({ ...formData, tasa_interes: e.target.value })
                   }
-                  className={styles.formSelect}
-                >
-                  <option value="pendiente">Pendiente</option>
-                  <option value="aprobado">Aprobado</option>
-                  <option value="activo">Activo</option>
-                  <option value="rechazado">Rechazado</option>
-                  <option value="pagado">Pagado</option>
-                  <option value="vencido">Vencido</option>
-                </select>
+                  placeholder="12.00"
+                  className={styles.formInput}
+                  required
+                />
               </div>
             </div>
 
-            {formData.cuotaMensual && formData.cuotaMensual > 0 && (
+            {cuotaMensual > 0 && (
               <div className={styles.calculationBox}>
-                <h4 className={styles.calculationTitle}>Cálculo del Crédito</h4>
+                <h4 className={styles.calculationTitle}>Cálculo Estimado del Crédito</h4>
                 <div className={styles.calculationGrid}>
                   <div className={styles.calculationItem}>
-                    <span className={styles.calculationLabel}>Cuota Mensual</span>
+                    <span className={styles.calculationLabel}>Cuota Mensual Estimada</span>
                     <span className={styles.calculationValue}>
-                      {formatCurrency(formData.cuotaMensual)}
+                      {formatCurrency(cuotaMensual)}
                     </span>
                   </div>
                   <div className={styles.calculationItem}>
-                    <span className={styles.calculationLabel}>Total Intereses</span>
-                    <span className={styles.calculationValue}>
-                      {formatCurrency(
-                        (formData.montoTotal || 0) - (formData.monto || 0)
-                      )}
-                    </span>
-                  </div>
-                  <div className={styles.calculationItem}>
-                    <span className={styles.calculationLabel}>Monto Total</span>
+                    <span className={styles.calculationLabel}>Total Estimado</span>
                     <span className={styles.calculationValueLarge}>
-                      {formatCurrency(formData.montoTotal || 0)}
+                      {formatCurrency(montoTotal)}
                     </span>
                   </div>
                 </div>
+                <p className={styles.calculationNote}>
+                  * Cálculo estimado. El backend calculará automáticamente estos valores al guardar.
+                </p>
               </div>
             )}
-          </div>
-
-          <div className={styles.formSection}>
-            <h3 className={styles.formSectionTitle}>Información Adicional</h3>
-            <div className={styles.formGrid}>
-              <div className={`${styles.formField} ${styles.formFieldFull}`}>
-                <label className={styles.formLabel}>Propósito del Crédito</label>
-                <input
-                  type="text"
-                  value={formData.proposito || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, proposito: e.target.value })
-                  }
-                  placeholder="Ej: Compra de vivienda, capital de trabajo..."
-                  className={styles.formInput}
-                />
-              </div>
-              <div className={`${styles.formField} ${styles.formFieldFull}`}>
-                <label className={styles.formLabel}>Observaciones</label>
-                <textarea
-                  value={formData.observaciones || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, observaciones: e.target.value })
-                  }
-                  placeholder="Notas o comentarios adicionales..."
-                  className={styles.formTextarea}
-                />
-              </div>
-            </div>
           </div>
 
           <div className={styles.formActions}>
@@ -296,7 +421,7 @@ export function CreditoCreatePage(): React.JSX.Element {
             </button>
             <button
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || loadingOptions}
               className={styles.primaryButton}
             >
               {saving ? (

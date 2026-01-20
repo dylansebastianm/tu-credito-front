@@ -1,11 +1,22 @@
 /**
  * Bancos Service - Tu Crédito Frontend
- * Stub de servicio para bancos
- * TODO: Implementar lógica real cuando el backend esté listo
+ * Servicio para gestionar bancos con el backend
  */
 
+import { api } from './apiClient';
 import type { Banco, BancoCreate, BancoUpdate } from '../types/banco';
 import type { PaginatedResponse } from '../types/api';
+
+/**
+ * Parámetros para listar bancos
+ */
+export interface BancosListParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  tipo?: 'PRIVADO' | 'GOBIERNO';
+  ordering?: string;
+}
 
 /**
  * Servicio de bancos
@@ -14,56 +25,52 @@ export const bancosService = {
   /**
    * Obtiene lista paginada de bancos
    */
-  async getAll(_params?: {
-    page?: number;
-    page_size?: number;
-    search?: string;
-    tipo?: string;
-    ordering?: string;
-  }): Promise<PaginatedResponse<Banco>> {
-    // TODO: Implementar petición real
-    // return api.get<PaginatedResponse<Banco>>('/bancos/', { params });
+  async getAll(params?: BancosListParams): Promise<PaginatedResponse<Banco>> {
+    const queryParams: Record<string, string | number> = {};
     
-    throw new Error('Not implemented yet');
+    if (params?.page) queryParams.page = params.page;
+    if (params?.page_size) queryParams.page_size = params.page_size;
+    if (params?.search) queryParams.search = params.search;
+    if (params?.tipo) queryParams.tipo = params.tipo;
+    if (params?.ordering) queryParams.ordering = params.ordering;
+
+    return api.get<PaginatedResponse<Banco>>('/bancos/', {
+      params: queryParams,
+    });
   },
 
   /**
    * Obtiene un banco por ID
    */
-  async getById(_id: number): Promise<Banco> {
-    // TODO: Implementar petición real
-    // return api.get<Banco>(`/bancos/${id}/`);
-    
-    throw new Error('Not implemented yet');
+  async getById(id: number): Promise<Banco> {
+    return api.get<Banco>(`/bancos/${id}/`);
   },
 
   /**
    * Crea un nuevo banco
    */
-  async create(_data: BancoCreate): Promise<Banco> {
-    // TODO: Implementar petición real
-    // return api.post<Banco>('/bancos/', data);
-    
-    throw new Error('Not implemented yet');
+  async create(data: BancoCreate): Promise<Banco> {
+    return api.post<Banco>('/bancos/', data);
   },
 
   /**
-   * Actualiza un banco
+   * Actualiza un banco (parcial)
    */
-  async update(_id: number, _data: BancoUpdate): Promise<Banco> {
-    // TODO: Implementar petición real
-    // return api.patch<Banco>(`/bancos/${id}/`, data);
-    
-    throw new Error('Not implemented yet');
+  async update(id: number, data: BancoUpdate): Promise<Banco> {
+    return api.patch<Banco>(`/bancos/${id}/`, data);
+  },
+
+  /**
+   * Actualiza un banco (completo)
+   */
+  async updateFull(id: number, data: BancoCreate): Promise<Banco> {
+    return api.put<Banco>(`/bancos/${id}/`, data);
   },
 
   /**
    * Elimina un banco
    */
-  async delete(_id: number): Promise<void> {
-    // TODO: Implementar petición real
-    // return api.delete<void>(`/bancos/${id}/`);
-    
-    throw new Error('Not implemented yet');
+  async delete(id: number): Promise<void> {
+    return api.delete<void>(`/bancos/${id}/`);
   },
 };

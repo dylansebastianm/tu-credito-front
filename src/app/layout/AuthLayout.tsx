@@ -14,7 +14,6 @@ import {
   FaSignOutAlt,
   FaBars,
   FaTimes,
-  FaDollarSign,
   FaUser,
 } from 'react-icons/fa';
 import { authService } from '../../services/auth.service';
@@ -124,9 +123,6 @@ export function AuthLayout(): React.JSX.Element {
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarVisible : ''}`}>
         <div className={styles.sidebarHeader}>
           <div className={styles.logo}>
-            <div className={styles.logoIcon}>
-              <FaDollarSign className={styles.logoIconSvg} />
-            </div>
             <div className={styles.logoText}>
               <h1 className={styles.logoTitle}>Tu Credito</h1>
               <p className={styles.logoSubtitle}>Sistema de Gestion</p>

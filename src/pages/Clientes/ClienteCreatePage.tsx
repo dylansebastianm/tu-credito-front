@@ -7,32 +7,65 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaSave, FaTimes } from 'react-icons/fa';
 import { setDocumentMeta } from '../../utils/meta';
-import { type MockCliente } from '../../data/mock-data';
+import { clientesService } from '../../services/clientes.service';
+import type { Cliente, ClienteCreate, ClienteListItem } from '../../types/cliente';
 import { ROUTES } from '../../app/config/constants';
+import { ApiError } from '../../utils/error';
 import styles from './Clientes.module.css';
 
 /**
  * ClienteCreatePage component
- * Página de creación de cliente
+ * Página de creación/edición de cliente
  */
 export function ClienteCreatePage(): React.JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
-  const isEdit = location.state?.cliente !== undefined;
-  const existingCliente = location.state?.cliente as MockCliente | undefined;
+  const existingCliente = location.state?.cliente as Cliente | ClienteListItem | undefined;
+  const isEdit = existingCliente !== undefined;
 
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState<Partial<MockCliente>>({
-    nombre: existingCliente?.nombre || '',
-    apellido: existingCliente?.apellido || '',
-    email: existingCliente?.email || '',
-    telefono: existingCliente?.telefono || '',
-    direccion: existingCliente?.direccion || '',
-    ciudad: existingCliente?.ciudad || '',
-    fechaNacimiento: existingCliente?.fechaNacimiento || '',
-    dni: existingCliente?.dni || '',
-    estado: existingCliente?.estado || 'pendiente',
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<ClienteCreate>({
+    nombre_completo: '',
+    email: '',
+    telefono: '',
+    direccion: '',
+    nacionalidad: '',
+    fecha_nacimiento: '',
+    tipo_persona: 'NATURAL',
+    banco: undefined,
   });
+
+  // Cargar datos del cliente si estamos editando
+  useEffect(() => {
+    const loadCliente = async () => {
+      if (isEdit && existingCliente && 'id' in existingCliente) {
+        try {
+          // Si es ClienteListItem, necesitamos cargar el detalle completo
+          const fullCliente =
+            'banco_info' in existingCliente || 'direccion' in existingCliente
+              ? (existingCliente as Cliente)
+              : await clientesService.getById(existingCliente.id);
+
+          setFormData({
+            nombre_completo: fullCliente.nombre_completo,
+            email: fullCliente.email,
+            telefono: fullCliente.telefono || '',
+            direccion: fullCliente.direccion || '',
+            nacionalidad: fullCliente.nacionalidad || '',
+            fecha_nacimiento: fullCliente.fecha_nacimiento,
+            tipo_persona: fullCliente.tipo_persona,
+            banco: fullCliente.banco,
+          });
+        } catch (err) {
+          console.error('Error loading cliente for edit:', err);
+          setError('Error al cargar los datos del cliente');
+        }
+      }
+    };
+
+    loadCliente();
+  }, [isEdit, existingCliente]);
 
   useEffect(() => {
     setDocumentMeta({
@@ -42,13 +75,42 @@ export function ClienteCreatePage(): React.JSX.Element {
   }, [isEdit]);
 
   const handleSave = async () => {
+    // Validaciones básicas
+    if (!formData.nombre_completo.trim()) {
+      setError('El nombre completo es requerido');
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      setError('El email es requerido');
+      return;
+    }
+
+    if (!formData.fecha_nacimiento) {
+      setError('La fecha de nacimiento es requerida');
+      return;
+    }
+
     setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
-    // TODO: Implementar lógica real con servicio
-    // Por ahora solo redirigir
-    setSaving(false);
-    navigate(ROUTES.CLIENTES);
+    setError(null);
+
+    try {
+      if (isEdit && existingCliente && 'id' in existingCliente) {
+        await clientesService.update(existingCliente.id, formData);
+      } else {
+        await clientesService.create(formData);
+      }
+      navigate(ROUTES.CLIENTES);
+    } catch (err) {
+      const errorMessage =
+        err instanceof ApiError
+          ? err.message
+          : 'Error al guardar el cliente. Por favor, intenta nuevamente.';
+      setError(errorMessage);
+      console.error('Error saving cliente:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -74,33 +136,72 @@ export function ClienteCreatePage(): React.JSX.Element {
           </p>
         </div>
 
+        {error && (
+          <div className={styles.alert}>
+            <p className={styles.alertText}>{error}</p>
+          </div>
+        )}
+
         <div className={styles.formBody}>
           <div className={styles.formSection}>
             <h3 className={styles.formSectionTitle}>Información Personal</h3>
             <div className={styles.formGrid}>
-              <div className={styles.formField}>
-                <label className={styles.formLabel}>Nombre <span className={styles.required}>*</span></label>
-                <input type="text" value={formData.nombre || ""} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} placeholder="Nombre" className={styles.formInput} />
+              <div className={`${styles.formField} ${styles.formFieldFull}`}>
+                <label className={styles.formLabel}>
+                  Nombre Completo <span className={styles.required}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.nombre_completo}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nombre_completo: e.target.value })
+                  }
+                  placeholder="Nombre completo del cliente"
+                  className={styles.formInput}
+                  required
+                />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>Apellido <span className={styles.required}>*</span></label>
-                <input type="text" value={formData.apellido || ""} onChange={(e) => setFormData({ ...formData, apellido: e.target.value })} placeholder="Apellido" className={styles.formInput} />
+                <label className={styles.formLabel}>
+                  Fecha de Nacimiento <span className={styles.required}>*</span>
+                </label>
+                <input
+                  type="date"
+                  value={formData.fecha_nacimiento}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fecha_nacimiento: e.target.value })
+                  }
+                  className={styles.formInput}
+                  required
+                />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>DNI/CURP <span className={styles.required}>*</span></label>
-                <input type="text" value={formData.dni || ""} onChange={(e) => setFormData({ ...formData, dni: e.target.value })} placeholder="DNI o CURP" className={styles.formInput} />
-              </div>
-              <div className={styles.formField}>
-                <label className={styles.formLabel}>Fecha de Nacimiento</label>
-                <input type="date" value={formData.fechaNacimiento || ""} onChange={(e) => setFormData({ ...formData, fechaNacimiento: e.target.value })} className={styles.formInput} />
-              </div>
-              <div className={styles.formField}>
-                <label className={styles.formLabel}>Estado</label>
-                <select value={formData.estado || "pendiente"} onChange={(e) => setFormData({ ...formData, estado: e.target.value as MockCliente["estado"] })} className={styles.formSelect}>
-                  <option value="activo">Activo</option>
-                  <option value="inactivo">Inactivo</option>
-                  <option value="pendiente">Pendiente</option>
+                <label className={styles.formLabel}>Tipo de Persona</label>
+                <select
+                  value={formData.tipo_persona}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      tipo_persona: e.target.value as 'NATURAL' | 'JURIDICO',
+                    })
+                  }
+                  className={styles.formSelect}
+                >
+                  <option value="NATURAL">Persona Natural</option>
+                  <option value="JURIDICO">Persona Jurídica</option>
                 </select>
+              </div>
+              <div className={styles.formField}>
+                <label className={styles.formLabel}>Nacionalidad</label>
+                <input
+                  type="text"
+                  value={formData.nacionalidad || ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, nacionalidad: e.target.value })
+                  }
+                  placeholder="Ej: Mexicana"
+                  className={styles.formInput}
+                />
               </div>
             </div>
           </div>
@@ -109,20 +210,43 @@ export function ClienteCreatePage(): React.JSX.Element {
             <h3 className={styles.formSectionTitle}>Contacto</h3>
             <div className={styles.formGrid}>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>Email <span className={styles.required}>*</span></label>
-                <input type="email" value={formData.email || ""} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="correo@ejemplo.com" className={styles.formInput} />
+                <label className={styles.formLabel}>
+                  Email <span className={styles.required}>*</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  placeholder="correo@ejemplo.com"
+                  className={styles.formInput}
+                  required
+                />
               </div>
               <div className={styles.formField}>
                 <label className={styles.formLabel}>Teléfono</label>
-                <input type="text" value={formData.telefono || ""} onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} placeholder="+52 55 1234 5678" className={styles.formInput} />
+                <input
+                  type="text"
+                  value={formData.telefono || ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, telefono: e.target.value })
+                  }
+                  placeholder="+52 55 1234 5678"
+                  className={styles.formInput}
+                />
               </div>
-              <div className={styles.formField}>
+              <div className={`${styles.formField} ${styles.formFieldFull}`}>
                 <label className={styles.formLabel}>Dirección</label>
-                <input type="text" value={formData.direccion || ""} onChange={(e) => setFormData({ ...formData, direccion: e.target.value })} placeholder="Calle y numero" className={styles.formInput} />
-              </div>
-              <div className={styles.formField}>
-                <label className={styles.formLabel}>Ciudad</label>
-                <input type="text" value={formData.ciudad || ""} onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })} placeholder="Ciudad" className={styles.formInput} />
+                <input
+                  type="text"
+                  value={formData.direccion || ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, direccion: e.target.value })
+                  }
+                  placeholder="Calle y número, Colonia, Ciudad"
+                  className={styles.formInput}
+                />
               </div>
             </div>
           </div>

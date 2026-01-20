@@ -3,7 +3,7 @@
  * Integrado desde Vercel v0 - Adaptado para react-router-dom
  */
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaCreditCard } from 'react-icons/fa';
 import {
@@ -12,10 +12,12 @@ import {
   HiOutlineTrash,
 } from 'react-icons/hi';
 import { setDocumentMeta } from '../../utils/meta';
-import { mockCreditos, type MockCredito } from '../../data/mock-data';
-import { formatCurrency, formatDate, getEstadoLabel } from '../../utils/format';
+import { creditosService } from '../../services/creditos.service';
+import type { CreditoListItem } from '../../types/credito';
+import { formatCurrency, formatDate } from '../../utils/format';
 import { ROUTES } from '../../app/config/constants';
 import { Table } from '../../components/ui/Table/Table';
+import { ApiError } from '../../utils/error';
 import styles from './Creditos.module.css';
 
 /**
@@ -24,9 +26,14 @@ import styles from './Creditos.module.css';
  */
 export function CreditosListPage(): React.JSX.Element {
   const navigate = useNavigate();
-  const [creditos, setCreditos] = useState<MockCredito[]>(mockCreditos);
+  const [creditos, setCreditos] = useState<CreditoListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterEstado, setFilterEstado] = useState<string>('all');
+  const [filterTipoCredito, setFilterTipoCredito] = useState<string>('all');
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
   useEffect(() => {
     setDocumentMeta({
@@ -35,49 +42,98 @@ export function CreditosListPage(): React.JSX.Element {
     });
   }, []);
 
-  const filteredCreditos = useMemo(() => {
-    return creditos.filter((credito) => {
-      const matchesSearch =
-        credito.clienteNombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        credito.bancoNombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        credito.id.toLowerCase().includes(searchTerm.toLowerCase());
+  const loadCreditos = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params: Parameters<typeof creditosService.getAll>[0] = {
+        page: currentPage,
+        page_size: pageSize,
+        ordering: '-fecha_registro',
+      };
 
-      const matchesEstado =
-        filterEstado === 'all' || credito.estado === filterEstado;
+      if (searchTerm.trim()) {
+        params.search = searchTerm.trim();
+      }
 
-      return matchesSearch && matchesEstado;
-    });
-  }, [creditos, searchTerm, filterEstado]);
+      if (filterTipoCredito !== 'all') {
+        params.tipo_credito = filterTipoCredito as 'AUTOMOTRIZ' | 'HIPOTECARIO' | 'COMERCIAL';
+      }
 
-  const getEstadoBadgeClass = (estado: string) => {
-    switch (estado) {
-      case 'activo':
-      case 'aprobado':
-      case 'pagado':
-        return styles.badgeGreen;
-      case 'pendiente':
-        return styles.badgeYellow;
-      case 'rechazado':
-      case 'vencido':
-        return styles.badgeRed;
-      default:
-        return styles.badgeGray;
+      const response = await creditosService.getAll(params);
+      setCreditos(response.results);
+      setTotalCount(response.count);
+    } catch (err) {
+      const errorMessage =
+        err instanceof ApiError
+          ? err.message
+          : 'Error al cargar los créditos. Por favor, intenta nuevamente.';
+      setError(errorMessage);
+      console.error('Error loading creditos:', err);
+    } finally {
+      setLoading(false);
     }
+  }, [searchTerm, filterTipoCredito, currentPage]);
+
+  useEffect(() => {
+    loadCreditos();
+  }, [loadCreditos]);
+
+  // Debounce para búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage === 1) {
+        loadCreditos();
+      } else {
+        setCurrentPage(1);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const handleViewDetail = (credito: CreditoListItem) => {
+    navigate(ROUTES.CREDITO_DETAIL(credito.id.toString()));
   };
 
-  const handleViewDetail = (credito: MockCredito) => {
-    navigate(ROUTES.CREDITO_DETAIL(credito.id));
-  };
-
-  const handleEdit = (credito: MockCredito) => {
+  const handleEdit = (credito: CreditoListItem) => {
     navigate(ROUTES.CREDITO_NUEVO, { state: { credito } });
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('¿Está seguro de eliminar este crédito?')) {
-      setCreditos(creditos.filter((c) => c.id !== id));
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('¿Está seguro de eliminar este crédito?')) {
+      return;
+    }
+
+    try {
+      await creditosService.delete(id);
+      // Recargar la lista
+      await loadCreditos();
+    } catch (err) {
+      const errorMessage =
+        err instanceof ApiError
+          ? err.message
+          : 'Error al eliminar el crédito. Por favor, intenta nuevamente.';
+      alert(errorMessage);
+      console.error('Error deleting credito:', err);
     }
   };
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Créditos</h1>
+        </div>
+        <div className={styles.errorState}>
+          <p className={styles.errorText}>{error}</p>
+          <button onClick={loadCreditos} className={styles.primaryButton}>
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -112,23 +168,54 @@ export function CreditosListPage(): React.JSX.Element {
         search={{
           value: searchTerm,
           onChange: setSearchTerm,
-          placeholder: 'Buscar por cliente, banco o ID...',
+          placeholder: 'Buscar por cliente, banco o descripción...',
         }}
         filter={{
-          value: filterEstado,
-          onChange: setFilterEstado,
+          value: filterTipoCredito,
+          onChange: setFilterTipoCredito,
           options: [
-            { value: 'all', label: 'Todos los estados' },
-            { value: 'pendiente', label: 'Pendiente' },
-            { value: 'aprobado', label: 'Aprobado' },
-            { value: 'activo', label: 'Activo' },
-            { value: 'rechazado', label: 'Rechazado' },
-            { value: 'pagado', label: 'Pagado' },
-            { value: 'vencido', label: 'Vencido' },
+            { value: 'all', label: 'Todos los tipos' },
+            { value: 'AUTOMOTRIZ', label: 'Automotriz' },
+            { value: 'HIPOTECARIO', label: 'Hipotecario' },
+            { value: 'COMERCIAL', label: 'Comercial' },
           ],
         }}
         footer={
-          <>Mostrando {filteredCreditos.length} de {creditos.length} créditos</>
+          <>
+            {loading ? (
+              'Cargando...'
+            ) : (
+              <>
+                Mostrando {creditos.length} de {totalCount} créditos
+                {totalCount > pageSize && (
+                  <>
+                    {' | '}
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className={styles.paginationButton}
+                    >
+                      Anterior
+                    </button>
+                    {' | Página '}
+                    {currentPage}
+                    {' | '}
+                    <button
+                      onClick={() =>
+                        setCurrentPage((p) =>
+                          Math.min(Math.ceil(totalCount / pageSize), p + 1)
+                        )
+                      }
+                      disabled={currentPage >= Math.ceil(totalCount / pageSize)}
+                      className={styles.paginationButton}
+                    >
+                      Siguiente
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+          </>
         }
       >
         <thead>
@@ -136,40 +223,51 @@ export function CreditosListPage(): React.JSX.Element {
             <th>ID</th>
             <th>Cliente</th>
             <th>Banco</th>
-            <th>Monto</th>
-            <th>Estado</th>
+            <th>Descripción</th>
+            <th>Monto (Min-Max)</th>
+            <th>Tipo</th>
             <th>Fecha</th>
             <th style={{ textAlign: 'right' }}>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {filteredCreditos.length === 0 ? (
+          {loading ? (
             <tr>
-              <td colSpan={7}>
+              <td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>
+                Cargando créditos...
+              </td>
+            </tr>
+          ) : creditos.length === 0 ? (
+            <tr>
+              <td colSpan={8}>
                 <div className={styles.emptyState}>
                   <FaCreditCard className={styles.emptyIcon} />
-                  <p className={styles.emptyTitle}>No hay créditos</p>
+                  <p className={styles.emptyTitle}>No se encontraron créditos</p>
                   <p className={styles.emptyText}>
-                    No se encontraron créditos con los filtros aplicados
+                    {searchTerm || filterTipoCredito !== 'all'
+                      ? 'Intenta ajustar los filtros de búsqueda'
+                      : 'Crea tu primer crédito para comenzar'}
                   </p>
                 </div>
               </td>
             </tr>
           ) : (
-            filteredCreditos.map((credito) => (
+            creditos.map((credito) => (
               <tr key={credito.id}>
-                <td className={styles.cellCode}>{credito.id}</td>
-                <td>{credito.clienteNombre}</td>
-                <td>{credito.bancoNombre}</td>
-                <td className={styles.cellMoney}>{formatCurrency(credito.monto)}</td>
+                <td className={styles.cellCode}>#{credito.id}</td>
+                <td>{credito.cliente_nombre}</td>
+                <td>{credito.banco_nombre}</td>
+                <td>{credito.descripcion}</td>
+                <td className={styles.cellMoney}>
+                  {formatCurrency(parseFloat(credito.pago_minimo))} -{' '}
+                  {formatCurrency(parseFloat(credito.pago_maximo))}
+                </td>
                 <td>
-                  <span
-                    className={`${styles.badge} ${getEstadoBadgeClass(credito.estado)}`}
-                  >
-                    {getEstadoLabel(credito.estado)}
+                  <span className={styles.badge}>
+                    {credito.tipo_credito_display || credito.tipo_credito}
                   </span>
                 </td>
-                <td>{formatDate(credito.fechaSolicitud)}</td>
+                <td>{formatDate(credito.fecha_registro)}</td>
                 <td>
                   <div className={styles.actionsCell}>
                     <button
@@ -188,7 +286,7 @@ export function CreditosListPage(): React.JSX.Element {
                     </button>
                     <button
                       onClick={() => handleDelete(credito.id)}
-                      className={`${styles.actionButton} ${styles.actionButtonDanger}`}
+                      className={styles.actionButton}
                       title="Eliminar"
                     >
                       <HiOutlineTrash />

@@ -3,7 +3,7 @@
  * Integrado desde Vercel v0 - Adaptado para react-router-dom
  */
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaUsers } from 'react-icons/fa';
 import {
@@ -12,10 +12,11 @@ import {
   HiOutlineTrash,
 } from 'react-icons/hi';
 import { setDocumentMeta } from '../../utils/meta';
-import { mockClientes, type MockCliente } from '../../data/mock-data';
-import { getEstadoLabel } from '../../utils/format';
+import { clientesService } from '../../services/clientes.service';
+import type { ClienteListItem } from '../../types/cliente';
 import { ROUTES } from '../../app/config/constants';
 import { Table } from '../../components/ui/Table/Table';
+import { ApiError } from '../../utils/error';
 import styles from './Clientes.module.css';
 
 /**
@@ -24,9 +25,14 @@ import styles from './Clientes.module.css';
  */
 export function ClientesListPage(): React.JSX.Element {
   const navigate = useNavigate();
-  const [clientes, setClientes] = useState<MockCliente[]>(mockClientes);
+  const [clientes, setClientes] = useState<ClienteListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterEstado, setFilterEstado] = useState<string>('all');
+  const [filterTipoPersona, setFilterTipoPersona] = useState<string>('all');
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
   useEffect(() => {
     setDocumentMeta({
@@ -35,47 +41,98 @@ export function ClientesListPage(): React.JSX.Element {
     });
   }, []);
 
-  const filteredClientes = useMemo(() => {
-    return clientes.filter((cliente) => {
-      const matchesSearch =
-        cliente.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cliente.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cliente.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cliente.dni.toLowerCase().includes(searchTerm.toLowerCase());
+  const loadClientes = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params: Parameters<typeof clientesService.getAll>[0] = {
+        page: currentPage,
+        page_size: pageSize,
+        ordering: 'nombre_completo',
+      };
 
-      const matchesEstado =
-        filterEstado === 'all' || cliente.estado === filterEstado;
+      if (searchTerm.trim()) {
+        params.search = searchTerm.trim();
+      }
 
-      return matchesSearch && matchesEstado;
-    });
-  }, [clientes, searchTerm, filterEstado]);
+      if (filterTipoPersona !== 'all') {
+        params.tipo_persona = filterTipoPersona as 'NATURAL' | 'JURIDICO';
+      }
 
-  const getEstadoBadgeClass = (estado: string) => {
-    switch (estado) {
-      case 'activo':
-        return styles.badgeSuccess;
-      case 'inactivo':
-        return styles.badgeDanger;
-      case 'pendiente':
-        return styles.badgeWarning;
-      default:
-        return styles.badgeDefault;
+      const response = await clientesService.getAll(params);
+      setClientes(response.results);
+      setTotalCount(response.count);
+    } catch (err) {
+      const errorMessage =
+        err instanceof ApiError
+          ? err.message
+          : 'Error al cargar los clientes. Por favor, intenta nuevamente.';
+      setError(errorMessage);
+      console.error('Error loading clientes:', err);
+    } finally {
+      setLoading(false);
     }
+  }, [searchTerm, filterTipoPersona, currentPage]);
+
+  useEffect(() => {
+    loadClientes();
+  }, [loadClientes]);
+
+  // Debounce para búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage === 1) {
+        loadClientes();
+      } else {
+        setCurrentPage(1);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const handleViewDetail = (cliente: ClienteListItem) => {
+    navigate(ROUTES.CLIENTE_DETAIL(cliente.id.toString()));
   };
 
-  const handleViewDetail = (cliente: MockCliente) => {
-    navigate(ROUTES.CLIENTE_DETAIL(cliente.id));
-  };
-
-  const handleEdit = (cliente: MockCliente) => {
+  const handleEdit = (cliente: ClienteListItem) => {
     navigate(ROUTES.CLIENTE_NUEVO, { state: { cliente } });
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('¿Está seguro de eliminar este cliente?')) {
-      setClientes(clientes.filter((c) => c.id !== id));
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('¿Está seguro de eliminar este cliente?')) {
+      return;
+    }
+
+    try {
+      await clientesService.delete(id);
+      // Recargar la lista
+      await loadClientes();
+    } catch (err) {
+      const errorMessage =
+        err instanceof ApiError
+          ? err.message
+          : 'Error al eliminar el cliente. Por favor, intenta nuevamente.';
+      alert(errorMessage);
+      console.error('Error deleting cliente:', err);
     }
   };
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Clientes</h1>
+        </div>
+        <div className={styles.errorState}>
+          <p className={styles.errorText}>{error}</p>
+          <button onClick={loadClientes} className={styles.primaryButton}>
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -105,64 +162,102 @@ export function ClientesListPage(): React.JSX.Element {
         search={{
           value: searchTerm,
           onChange: setSearchTerm,
-          placeholder: 'Buscar por nombre, email o DNI...',
+          placeholder: 'Buscar por nombre, email o teléfono...',
         }}
         filter={{
-          value: filterEstado,
-          onChange: setFilterEstado,
+          value: filterTipoPersona,
+          onChange: setFilterTipoPersona,
           options: [
-            { value: 'all', label: 'Todos los estados' },
-            { value: 'activo', label: 'Activo' },
-            { value: 'inactivo', label: 'Inactivo' },
-            { value: 'pendiente', label: 'Pendiente' },
+            { value: 'all', label: 'Todos los tipos' },
+            { value: 'NATURAL', label: 'Persona Natural' },
+            { value: 'JURIDICO', label: 'Persona Jurídica' },
           ],
         }}
         footer={
-          <>Mostrando {filteredClientes.length} de {clientes.length} clientes</>
+          <>
+            {loading ? (
+              'Cargando...'
+            ) : (
+              <>
+                Mostrando {clientes.length} de {totalCount} clientes
+                {totalCount > pageSize && (
+                  <>
+                    {' | '}
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className={styles.paginationButton}
+                    >
+                      Anterior
+                    </button>
+                    {' | Página '}
+                    {currentPage}
+                    {' | '}
+                    <button
+                      onClick={() =>
+                        setCurrentPage((p) =>
+                          Math.min(Math.ceil(totalCount / pageSize), p + 1)
+                        )
+                      }
+                      disabled={currentPage >= Math.ceil(totalCount / pageSize)}
+                      className={styles.paginationButton}
+                    >
+                      Siguiente
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+          </>
         }
       >
         <thead>
           <tr>
             <th>Nombre</th>
             <th>Email</th>
-            <th>Ciudad</th>
-            <th>Estado</th>
-            <th>Créditos</th>
+            <th>Teléfono</th>
+            <th>Edad</th>
+            <th>Tipo</th>
             <th style={{ textAlign: 'right' }}>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {filteredClientes.length === 0 ? (
+          {loading ? (
+            <tr>
+              <td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
+                Cargando clientes...
+              </td>
+            </tr>
+          ) : clientes.length === 0 ? (
             <tr>
               <td colSpan={6}>
                 <div className={styles.emptyState}>
                   <FaUsers className={styles.emptyIcon} />
                   <p className={styles.emptyTitle}>No se encontraron clientes</p>
                   <p className={styles.emptyText}>
-                    Intenta ajustar los filtros de búsqueda
+                    {searchTerm || filterTipoPersona !== 'all'
+                      ? 'Intenta ajustar los filtros de búsqueda'
+                      : 'Crea tu primer cliente para comenzar'}
                   </p>
                 </div>
               </td>
             </tr>
           ) : (
-            filteredClientes.map((cliente) => (
+            clientes.map((cliente) => (
               <tr key={cliente.id}>
                 <td>
                   <div className={styles.cellPrimary}>
-                    {cliente.nombre} {cliente.apellido}
+                    {cliente.nombre_completo}
                   </div>
-                  <div className={styles.cellCode}>{cliente.dni}</div>
                 </td>
                 <td>{cliente.email}</td>
-                <td>{cliente.ciudad}</td>
+                <td>{cliente.telefono || '—'}</td>
+                <td>{cliente.edad} años</td>
                 <td>
-                  <span
-                    className={`${styles.badge} ${getEstadoBadgeClass(cliente.estado)}`}
-                  >
-                    {getEstadoLabel(cliente.estado)}
+                  <span className={styles.badge}>
+                    {cliente.tipo_persona_display || cliente.tipo_persona}
                   </span>
                 </td>
-                <td>{cliente.creditosActivos}</td>
                 <td>
                   <div className={styles.actionsCell}>
                     <button
