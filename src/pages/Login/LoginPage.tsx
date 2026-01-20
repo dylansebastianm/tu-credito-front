@@ -19,7 +19,7 @@ import styles from './LoginPage.module.css';
  */
 export function LoginPage(): React.JSX.Element {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');

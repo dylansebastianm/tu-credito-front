@@ -20,6 +20,9 @@ export interface ApiErrorResponse {
   detail?: string;
   message?: string;
   errors?: Record<string, string[]>;
+  details?: Record<string, string[]>;
+  error?: boolean;
+  status_code?: number;
   [key: string]: unknown;
 }
 

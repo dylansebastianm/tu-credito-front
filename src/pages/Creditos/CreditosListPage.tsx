@@ -6,6 +6,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaCreditCard } from 'react-icons/fa';
+import { Breadcrumb } from '../../components/ui/Breadcrumb/Breadcrumb';
 import {
   HiOutlineEye,
   HiOutlinePencil,
@@ -17,7 +18,9 @@ import type { CreditoListItem } from '../../types/credito';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { ROUTES } from '../../app/config/constants';
 import { Table } from '../../components/ui/Table/Table';
-import { ApiError } from '../../utils/error';
+import { Pagination } from '../../components/ui/Pagination/Pagination';
+import { Alert } from '../../components/ui/Alert/Alert';
+import { ApiError, getErrorMessage } from '../../utils/error';
 import styles from './Creditos.module.css';
 
 /**
@@ -27,12 +30,13 @@ import styles from './Creditos.module.css';
 export function CreditosListPage(): React.JSX.Element {
   const navigate = useNavigate();
   const [creditos, setCreditos] = useState<CreditoListItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipoCredito, setFilterTipoCredito] = useState<string>('all');
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
   const pageSize = 20;
 
   useEffect(() => {
@@ -43,7 +47,6 @@ export function CreditosListPage(): React.JSX.Element {
   }, []);
 
   const loadCreditos = useCallback(async () => {
-    setLoading(true);
     setError(null);
     try {
       const params: Parameters<typeof creditosService.getAll>[0] = {
@@ -70,14 +73,8 @@ export function CreditosListPage(): React.JSX.Element {
           : 'Error al cargar los créditos. Por favor, intenta nuevamente.';
       setError(errorMessage);
       console.error('Error loading creditos:', err);
-    } finally {
-      setLoading(false);
     }
   }, [searchTerm, filterTipoCredito, currentPage]);
-
-  useEffect(() => {
-    loadCreditos();
-  }, [loadCreditos]);
 
   // Debounce para búsqueda
   useEffect(() => {
@@ -87,10 +84,10 @@ export function CreditosListPage(): React.JSX.Element {
       } else {
         setCurrentPage(1);
       }
-    }, 500);
+    }, searchTerm ? 500 : 0); // Sin debounce si searchTerm está vacío
 
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, filterTipoCredito, currentPage, loadCreditos]);
 
   const handleViewDetail = (credito: CreditoListItem) => {
     navigate(ROUTES.CREDITO_DETAIL(credito.id.toString()));
@@ -107,13 +104,12 @@ export function CreditosListPage(): React.JSX.Element {
 
     try {
       await creditosService.delete(id);
+      setAlertMessage('Crédito eliminado exitosamente');
+      setShowAlert(true);
       // Recargar la lista
       await loadCreditos();
     } catch (err) {
-      const errorMessage =
-        err instanceof ApiError
-          ? err.message
-          : 'Error al eliminar el crédito. Por favor, intenta nuevamente.';
+      const errorMessage = getErrorMessage(err) || 'Error al eliminar el crédito. Por favor, intenta nuevamente.';
       alert(errorMessage);
       console.error('Error deleting credito:', err);
     }
@@ -136,17 +132,20 @@ export function CreditosListPage(): React.JSX.Element {
   }
 
   return (
-    <div className={styles.container}>
-      <nav className={styles.breadcrumb}>
-        <span
-          className={styles.breadcrumbLink}
-          onClick={() => navigate(ROUTES.DASHBOARD)}
-        >
-          Inicio
-        </span>
-        <span className={styles.breadcrumbSeparator}>/</span>
-        <span className={styles.breadcrumbCurrent}>Créditos</span>
-      </nav>
+    <>
+      <Alert
+        type="success"
+        title={alertMessage}
+        isVisible={showAlert}
+        onClose={() => setShowAlert(false)}
+      />
+      <div className={styles.container}>
+      <Breadcrumb
+        items={[
+          { label: 'Inicio', route: ROUTES.DASHBOARD },
+          { label: 'Créditos' },
+        ]}
+      />
 
       <div className={styles.header}>
         <div className={styles.headerTop}>
@@ -182,36 +181,15 @@ export function CreditosListPage(): React.JSX.Element {
         }}
         footer={
           <>
-            {!loading && (
-              <>
-                Mostrando {creditos.length} de {totalCount} créditos
-                {totalCount > pageSize && (
-                  <>
-                    {' | '}
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className={styles.paginationButton}
-                    >
-                      Anterior
-                    </button>
-                    {' | Página '}
-                    {currentPage}
-                    {' | '}
-                    <button
-                      onClick={() =>
-                        setCurrentPage((p) =>
-                          Math.min(Math.ceil(totalCount / pageSize), p + 1)
-                        )
-                      }
-                      disabled={currentPage >= Math.ceil(totalCount / pageSize)}
-                      className={styles.paginationButton}
-                    >
-                      Siguiente
-                    </button>
-                  </>
-                )}
-              </>
+            <div style={{ marginBottom: '16px' }}>
+              Mostrando {creditos.length} de {totalCount} créditos
+            </div>
+            {totalCount > pageSize && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(totalCount / pageSize)}
+                onPageChange={setCurrentPage}
+              />
             )}
           </>
         }
@@ -229,7 +207,7 @@ export function CreditosListPage(): React.JSX.Element {
           </tr>
         </thead>
         <tbody>
-          {!loading && creditos.length === 0 ? (
+          {creditos.length === 0 ? (
             <tr>
               <td colSpan={8}>
                 <div className={styles.emptyState}>
@@ -291,5 +269,6 @@ export function CreditosListPage(): React.JSX.Element {
         </tbody>
       </Table>
     </div>
+    </>
   );
 }

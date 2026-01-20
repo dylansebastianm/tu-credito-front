@@ -3,9 +3,10 @@
  * Integrado desde Vercel v0 - Adaptado para react-router-dom
  */
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaBuilding } from 'react-icons/fa';
+import { Breadcrumb } from '../../components/ui/Breadcrumb/Breadcrumb';
 import {
   HiOutlineEye,
   HiOutlinePencil,
@@ -15,9 +16,11 @@ import { setDocumentMeta } from '../../utils/meta';
 import { formatPercent, getEstadoLabel } from '../../utils/format';
 import { ROUTES } from '../../app/config/constants';
 import { Table } from '../../components/ui/Table/Table';
+import { Pagination } from '../../components/ui/Pagination/Pagination';
 import { bancosService } from '../../services/bancos.service';
 import type { BancoListItem } from '../../types/banco';
 import styles from './Bancos.module.css';
+import { Alert } from '../../components/ui/Alert/Alert';
 
 /**
  * BancosListPage component
@@ -26,12 +29,13 @@ import styles from './Bancos.module.css';
 export function BancosListPage(): React.JSX.Element {
   const navigate = useNavigate();
   const [bancos, setBancos] = useState<BancoListItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState<string>('all');
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
 
   useEffect(() => {
     setDocumentMeta({
@@ -44,7 +48,6 @@ export function BancosListPage(): React.JSX.Element {
   useEffect(() => {
     const loadBancos = async () => {
       try {
-        setLoading(true);
         setError(null);
         const response = await bancosService.getAll({
           page: currentPage,
@@ -57,8 +60,6 @@ export function BancosListPage(): React.JSX.Element {
       } catch (err) {
         setError('Error al cargar los bancos. Por favor, intenta nuevamente.');
         console.error('Error loading bancos:', err);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -93,6 +94,8 @@ export function BancosListPage(): React.JSX.Element {
     if (window.confirm('¿Está seguro de eliminar este banco?')) {
       try {
         await bancosService.delete(id);
+        setAlertMessage('Banco eliminado exitosamente');
+        setShowAlert(true);
         // Recargar la lista
         const response = await bancosService.getAll({
           page: currentPage,
@@ -123,17 +126,20 @@ export function BancosListPage(): React.JSX.Element {
   }
 
   return (
-    <div className={styles.container}>
-      <nav className={styles.breadcrumb}>
-        <span
-          className={styles.breadcrumbLink}
-          onClick={() => navigate(ROUTES.DASHBOARD)}
-        >
-          Inicio
-        </span>
-        <span className={styles.breadcrumbSeparator}>/</span>
-        <span className={styles.breadcrumbCurrent}>Bancos</span>
-      </nav>
+    <>
+      <Alert
+        type="success"
+        title={alertMessage}
+        isVisible={showAlert}
+        onClose={() => setShowAlert(false)}
+      />
+      <div className={styles.container}>
+      <Breadcrumb
+        items={[
+          { label: 'Inicio', route: ROUTES.DASHBOARD },
+          { label: 'Bancos' },
+        ]}
+      />
 
       <div className={styles.header}>
         <div className={styles.headerTop}>
@@ -168,27 +174,15 @@ export function BancosListPage(): React.JSX.Element {
         }}
         footer={
           <>
-            Mostrando {bancos.length} de {totalCount} bancos
+            <div style={{ marginBottom: '16px' }}>
+              Mostrando {bancos.length} de {totalCount} bancos
+            </div>
             {totalCount > 20 && (
-              <div className={styles.paginationButtons}>
-                <button
-                  className={styles.paginationButton}
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Anterior
-                </button>
-                <span className={styles.paginationInfo}>
-                  Página {currentPage}
-                </span>
-                <button
-                  className={styles.paginationButton}
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                  disabled={bancos.length < 20}
-                >
-                  Siguiente
-                </button>
-              </div>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(totalCount / 20)}
+                onPageChange={setCurrentPage}
+              />
             )}
           </>
         }
@@ -267,5 +261,6 @@ export function BancosListPage(): React.JSX.Element {
         </tbody>
       </Table>
     </div>
+    </>
   );
 }

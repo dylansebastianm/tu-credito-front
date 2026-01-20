@@ -6,6 +6,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaUsers } from 'react-icons/fa';
+import { Breadcrumb } from '../../components/ui/Breadcrumb/Breadcrumb';
 import {
   HiOutlineEye,
   HiOutlinePencil,
@@ -16,7 +17,9 @@ import { clientesService } from '../../services/clientes.service';
 import type { ClienteListItem } from '../../types/cliente';
 import { ROUTES } from '../../app/config/constants';
 import { Table } from '../../components/ui/Table/Table';
-import { ApiError } from '../../utils/error';
+import { Pagination } from '../../components/ui/Pagination/Pagination';
+import { getErrorMessage } from '../../utils/error';
+import { Alert } from '../../components/ui/Alert/Alert';
 import styles from './Clientes.module.css';
 
 /**
@@ -26,12 +29,13 @@ import styles from './Clientes.module.css';
 export function ClientesListPage(): React.JSX.Element {
   const navigate = useNavigate();
   const [clientes, setClientes] = useState<ClienteListItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTipoPersona, setFilterTipoPersona] = useState<string>('all');
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
   const pageSize = 20;
 
   useEffect(() => {
@@ -42,7 +46,6 @@ export function ClientesListPage(): React.JSX.Element {
   }, []);
 
   const loadClientes = useCallback(async () => {
-    setLoading(true);
     setError(null);
     try {
       const params: Parameters<typeof clientesService.getAll>[0] = {
@@ -63,20 +66,11 @@ export function ClientesListPage(): React.JSX.Element {
       setClientes(response.results);
       setTotalCount(response.count);
     } catch (err) {
-      const errorMessage =
-        err instanceof ApiError
-          ? err.message
-          : 'Error al cargar los clientes. Por favor, intenta nuevamente.';
+      const errorMessage = getErrorMessage(err) || 'Error al cargar los clientes. Por favor, intenta nuevamente.';
       setError(errorMessage);
       console.error('Error loading clientes:', err);
-    } finally {
-      setLoading(false);
     }
   }, [searchTerm, filterTipoPersona, currentPage]);
-
-  useEffect(() => {
-    loadClientes();
-  }, [loadClientes]);
 
   // Debounce para búsqueda
   useEffect(() => {
@@ -86,10 +80,10 @@ export function ClientesListPage(): React.JSX.Element {
       } else {
         setCurrentPage(1);
       }
-    }, 500);
+    }, searchTerm ? 500 : 0); // Sin debounce si searchTerm está vacío
 
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, filterTipoPersona, currentPage, loadClientes]);
 
   const handleViewDetail = (cliente: ClienteListItem) => {
     navigate(ROUTES.CLIENTE_DETAIL(cliente.id.toString()));
@@ -106,13 +100,12 @@ export function ClientesListPage(): React.JSX.Element {
 
     try {
       await clientesService.delete(id);
+      setAlertMessage('Cliente eliminado exitosamente');
+      setShowAlert(true);
       // Recargar la lista
       await loadClientes();
     } catch (err) {
-      const errorMessage =
-        err instanceof ApiError
-          ? err.message
-          : 'Error al eliminar el cliente. Por favor, intenta nuevamente.';
+      const errorMessage = getErrorMessage(err) || 'Error al eliminar el cliente. Por favor, intenta nuevamente.';
       alert(errorMessage);
       console.error('Error deleting cliente:', err);
     }
@@ -135,12 +128,20 @@ export function ClientesListPage(): React.JSX.Element {
   }
 
   return (
-    <div className={styles.container}>
-      <nav className={styles.breadcrumb}>
-        <span className={styles.breadcrumbLink} onClick={() => navigate(ROUTES.DASHBOARD)}>Inicio</span>
-        <span className={styles.breadcrumbSeparator}>/</span>
-        <span className={styles.breadcrumbCurrent}>Clientes</span>
-      </nav>
+    <>
+      <Alert
+        type="success"
+        title={alertMessage}
+        isVisible={showAlert}
+        onClose={() => setShowAlert(false)}
+      />
+      <div className={styles.container}>
+        <Breadcrumb
+        items={[
+          { label: 'Inicio', route: ROUTES.DASHBOARD },
+          { label: 'Clientes' },
+        ]}
+      />
 
       <div className={styles.header}>
         <div className={styles.headerTop}>
@@ -175,36 +176,15 @@ export function ClientesListPage(): React.JSX.Element {
         }}
         footer={
           <>
-            {!loading && (
-              <>
-                Mostrando {clientes.length} de {totalCount} clientes
-                {totalCount > pageSize && (
-                  <>
-                    {' | '}
-                    <button
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                      className={styles.paginationButton}
-                    >
-                      Anterior
-                    </button>
-                    {' | Página '}
-                    {currentPage}
-                    {' | '}
-                    <button
-                      onClick={() =>
-                        setCurrentPage((p) =>
-                          Math.min(Math.ceil(totalCount / pageSize), p + 1)
-                        )
-                      }
-                      disabled={currentPage >= Math.ceil(totalCount / pageSize)}
-                      className={styles.paginationButton}
-                    >
-                      Siguiente
-                    </button>
-                  </>
-                )}
-              </>
+            <div style={{ marginBottom: '16px' }}>
+              Mostrando {clientes.length} de {totalCount} clientes
+            </div>
+            {totalCount > pageSize && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={Math.ceil(totalCount / pageSize)}
+                onPageChange={setCurrentPage}
+              />
             )}
           </>
         }
@@ -220,7 +200,7 @@ export function ClientesListPage(): React.JSX.Element {
           </tr>
         </thead>
         <tbody>
-          {!loading && clientes.length === 0 ? (
+          {clientes.length === 0 ? (
             <tr>
               <td colSpan={6}>
                 <div className={styles.emptyState}>
@@ -281,5 +261,6 @@ export function ClientesListPage(): React.JSX.Element {
         </tbody>
       </Table>
     </div>
+    </>
   );
 }

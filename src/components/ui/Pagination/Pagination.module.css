@@ -1,10 +1,77 @@
 /**
  * Pagination Styles - Tu Crédito Frontend
- * 
- * UI IMPLEMENTATION PROVIDED BY VERCEL v0 – PLACEHOLDER ONLY
- * Este archivo será reemplazado cuando se integre el diseño de v0
  */
 
 .pagination {
-  /* Placeholder - será reemplazado por v0 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background-color: transparent;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.arrow:hover:not(.disabled) {
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+}
+
+.arrow.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pages {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background-color: transparent;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.page:hover:not(.active) {
+  background-color: #f3f4f6;
+}
+
+.page.active {
+  background-color: #1e3a5f;
+  color: #fff;
+  border-color: #1e3a5f;
+}
+
+.ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: #9ca3af;
+  font-size: 14px;
 }

@@ -20,9 +20,7 @@ export function GlobalLoading(): React.JSX.Element | null {
 
   return (
     <div className={styles.overlay}>
-      <div className={styles.spinnerContainer}>
-        <div className={styles.spinner} />
-      </div>
+      <div className={styles.spinner} />
     </div>
   );
 }

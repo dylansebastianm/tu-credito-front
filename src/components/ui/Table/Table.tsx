@@ -1,6 +1,7 @@
 import React from 'react';
-import type { TableHTMLAttributes } from 'react';
+import type { TableHTMLAttributes, ChangeEvent } from 'react';
 import { FaSearch } from 'react-icons/fa';
+import { Select } from '../Select/Select';
 import styles from './Table.module.css';
 
 export type TableFilterOption = {
@@ -50,17 +51,16 @@ export function Table({
             className={styles.searchInput}
           />
         </div>
-        <select
-          value={filter.value}
-          onChange={(e) => filter.onChange(e.target.value)}
-          className={styles.filterSelect}
-        >
-          {filter.options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+        <div style={{ minWidth: '160px' }}>
+          <Select
+            value={filter.value}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => filter.onChange(e.target.value)}
+            options={filter.options}
+            placeholder="Filtrar..."
+            showRequiredIndicator={false}
+            clearable={false}
+          />
+        </div>
       </div>
 
       <div className={styles.tableWrapper}>

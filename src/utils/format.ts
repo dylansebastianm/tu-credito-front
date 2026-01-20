@@ -6,14 +6,14 @@
 /**
  * Formatea un número como moneda
  */
-export function formatCurrency(value: number | string, currency: string = 'MXN'): string {
+export function formatCurrency(value: number | string, currency: string = 'USD'): string {
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
   
   if (isNaN(numValue)) {
     return '0.00';
   }
 
-  return new Intl.NumberFormat('es-MX', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: currency,
     minimumFractionDigits: 2,
@@ -42,7 +42,7 @@ export function formatDate(date: string | Date): string {
  * Formatea una fecha corta
  */
 export function formatDateShort(dateString: string): string {
-  return new Intl.DateTimeFormat('es-MX', {
+  return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -59,7 +59,7 @@ export function formatDateTime(date: string | Date): string {
     return '';
   }
 
-  return new Intl.DateTimeFormat('es-MX', {
+  return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

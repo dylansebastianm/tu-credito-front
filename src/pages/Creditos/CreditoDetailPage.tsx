@@ -10,7 +10,7 @@ import { creditosService } from '../../services/creditos.service';
 import type { Credito } from '../../types/credito';
 import { ROUTES } from '../../app/config/constants';
 import { CreditDetailCard } from '../../components/domain/CreditDetailCard/CreditDetailCard';
-import { ApiError } from '../../utils/error';
+import { getErrorMessage } from '../../utils/error';
 import styles from './Creditos.module.css';
 
 /**
@@ -21,25 +21,21 @@ export function CreditoDetailPage(): React.JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [credito, setCredito] = useState<Credito | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadCredito = async () => {
       if (!id) {
         setError('ID de crédito no proporcionado');
-        setLoading(false);
         return;
       }
 
       const creditoId = parseInt(id, 10);
       if (isNaN(creditoId)) {
         setError('ID de crédito inválido');
-        setLoading(false);
         return;
       }
 
-      setLoading(true);
       setError(null);
 
       try {
@@ -50,22 +46,14 @@ export function CreditoDetailPage(): React.JSX.Element {
           description: `Detalle del crédito ${data.id}`,
         });
       } catch (err) {
-        const errorMessage =
-          err instanceof ApiError
-            ? err.message
-            : 'Error al cargar el crédito. Por favor, intenta nuevamente.';
+        const errorMessage = getErrorMessage(err) || 'Error al cargar el crédito. Por favor, intenta nuevamente.';
         setError(errorMessage);
         console.error('Error loading credito:', err);
-      } finally {
-        setLoading(false);
       }
     };
 
     loadCredito();
   }, [id]);
-
-  // El loading global se muestra automáticamente durante las peticiones
-  // No mostramos nada aquí, solo el spinner global
 
   if (error || !credito) {
     return (

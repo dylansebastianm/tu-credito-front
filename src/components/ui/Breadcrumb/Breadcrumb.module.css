@@ -1,0 +1,32 @@
+/**
+ * Breadcrumb Styles - Tu Crédito Frontend
+ */
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.breadcrumbLink {
+  color: #2563eb;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.breadcrumbLink:hover {
+  text-decoration: underline;
+}
+
+.breadcrumbSeparator {
+  color: #d1d5db;
+}
+
+.breadcrumbCurrent {
+  color: #111827;
+  font-weight: 500;
+}

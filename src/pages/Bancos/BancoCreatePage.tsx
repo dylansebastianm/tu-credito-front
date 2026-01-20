@@ -11,6 +11,11 @@ import { ROUTES } from '../../app/config/constants';
 import { bancosService } from '../../services/bancos.service';
 import type { Banco, BancoCreate, BancoListItem } from '../../types/banco';
 import { BackButton } from '../../components/ui/BackButton/BackButton';
+import { Select } from '../../components/ui/Select/Select';
+import { Input } from '../../components/ui/Input/Input';
+import { Alert } from '../../components/ui/Alert/Alert';
+import { isRequired, getEmailError, getPhoneError } from '../../utils/validation';
+import { getErrorMessage } from '../../utils/error';
 import styles from './Bancos.module.css';
 
 /**
@@ -25,6 +30,9 @@ export function BancoCreatePage(): React.JSX.Element {
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
   const [formData, setFormData] = useState<BancoCreate>({
     nombre: '',
     codigo: '',
@@ -93,58 +101,119 @@ export function BancoCreatePage(): React.JSX.Element {
   }, [isEdit, existingBanco]);
 
   const handleSave = async () => {
-    // Validaciones básicas
-    if (!formData.nombre || !formData.nombre.trim()) {
-      setError('El nombre del banco es requerido');
-      return;
+    // Validaciones de campos requeridos - errores individuales
+    const newFieldErrors: Record<string, string> = {};
+
+    if (!isRequired(formData.nombre)) {
+      newFieldErrors.nombre = 'El nombre del banco es requerido';
     }
 
-    if (!formData.codigo || !formData.codigo.trim()) {
-      setError('El código del banco es requerido');
-      return;
+    if (!isRequired(formData.codigo)) {
+      newFieldErrors.codigo = 'El código del banco es requerido';
+    }
+
+    // Validar tipo (requerido) - siempre tiene valor por defecto, pero verificamos que exista
+    if (!formData.tipo) {
+      newFieldErrors.tipo = 'El tipo de banco es requerido';
+    }
+
+    // Validar email (requerido)
+    const emailError = getEmailError(formData.email || '');
+    if (emailError) {
+      newFieldErrors.email = emailError;
+    }
+
+    // Validar teléfono (requerido)
+    const phoneError = getPhoneError(formData.telefono || '');
+    if (phoneError) {
+      newFieldErrors.telefono = phoneError;
+    }
+
+    // Validar dirección (requerido)
+    if (!isRequired(formData.direccion)) {
+      newFieldErrors.direccion = 'La dirección es requerida';
     }
 
     // Validar tasas
-    if (formData.tasa_interes_min && formData.tasa_interes_max) {
+    if (formData.tasa_interes_min !== undefined && formData.tasa_interes_max !== undefined) {
       if (formData.tasa_interes_min > formData.tasa_interes_max) {
-        setError('La tasa mínima no puede ser mayor que la tasa máxima');
-        return;
+        newFieldErrors.tasa_interes_max = 'La tasa mínima no puede ser mayor que la tasa máxima';
       }
     }
 
     // Validar plazos
-    if (formData.plazo_minimo && formData.plazo_maximo) {
+    if (formData.plazo_minimo !== undefined && formData.plazo_maximo !== undefined) {
       if (formData.plazo_minimo > formData.plazo_maximo) {
-        setError('El plazo mínimo no puede ser mayor que el plazo máximo');
-        return;
+        newFieldErrors.plazo_maximo = 'El plazo mínimo no puede ser mayor que el plazo máximo';
       }
     }
 
     // Validar montos
-    if (formData.monto_minimo && formData.monto_maximo) {
+    if (formData.monto_minimo !== undefined && formData.monto_maximo !== undefined) {
       if (formData.monto_minimo > formData.monto_maximo) {
-        setError('El monto mínimo no puede ser mayor que el monto máximo');
-        return;
+        newFieldErrors.monto_maximo = 'El monto mínimo no puede ser mayor que el monto máximo';
       }
     }
+
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
+      return;
+    }
+
+    setFieldErrors({});
 
     try {
       setSaving(true);
       setError(null);
 
-      if (isEdit && existingBanco) {
-        await bancosService.updateFull(existingBanco.id, formData);
-      } else {
-        await bancosService.create(formData);
+      // Limpiar el objeto formData: asegurar que los campos requeridos estén presentes
+      const cleanFormData: BancoCreate = {
+        nombre: formData.nombre.trim(),
+        codigo: formData.codigo.trim(),
+        tipo: formData.tipo,
+        direccion: formData.direccion?.trim() || '',
+        email: formData.email?.trim() || '',
+        telefono: formData.telefono?.trim() || '',
+        estado: formData.estado || 'activo',
+      };
+
+      // Agregar campos opcionales solo si tienen valor
+      if (formData.sitio_web?.trim()) {
+        cleanFormData.sitio_web = formData.sitio_web.trim();
+      }
+      if (formData.tasa_interes_min !== undefined) {
+        cleanFormData.tasa_interes_min = formData.tasa_interes_min;
+      }
+      if (formData.tasa_interes_max !== undefined) {
+        cleanFormData.tasa_interes_max = formData.tasa_interes_max;
+      }
+      if (formData.plazo_minimo !== undefined) {
+        cleanFormData.plazo_minimo = formData.plazo_minimo;
+      }
+      if (formData.plazo_maximo !== undefined) {
+        cleanFormData.plazo_maximo = formData.plazo_maximo;
+      }
+      if (formData.monto_minimo !== undefined) {
+        cleanFormData.monto_minimo = formData.monto_minimo;
+      }
+      if (formData.monto_maximo !== undefined) {
+        cleanFormData.monto_maximo = formData.monto_maximo;
       }
 
-      navigate(ROUTES.BANCOS);
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.detail ||
-        err?.response?.data?.message ||
-        'Error al guardar el banco. Por favor, intenta nuevamente.'
-      );
+      if (isEdit && existingBanco) {
+        await bancosService.updateFull(existingBanco.id, cleanFormData);
+        setAlertMessage('Banco actualizado exitosamente');
+      } else {
+        await bancosService.create(cleanFormData);
+        setAlertMessage('Banco creado exitosamente');
+      }
+      setShowAlert(true);
+      setTimeout(() => {
+        navigate(ROUTES.BANCOS);
+      }, 500);
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al guardar el banco. Por favor, intenta nuevamente.';
+      setError(errorMessage);
       console.error('Error saving banco:', err);
     } finally {
       setSaving(false);
@@ -152,7 +221,14 @@ export function BancoCreatePage(): React.JSX.Element {
   };
 
   return (
-    <div className={styles.container}>
+    <>
+      <Alert
+        type="success"
+        title={alertMessage}
+        isVisible={showAlert}
+        onClose={() => setShowAlert(false)}
+      />
+      <div className={styles.container}>
       {error && (
         <div className={styles.alert}>
           <p className={styles.alertText}>{error}</p>
@@ -180,57 +256,69 @@ export function BancoCreatePage(): React.JSX.Element {
             <h3 className={styles.formSectionTitle}>Información General</h3>
             <div className={styles.formGrid}>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>
-                  Nombre del Banco <span className={styles.required}>*</span>
-                </label>
-                <input
-                  type="text"
+                <Input
+                  label="Nombre del Banco"
+                  required
                   value={formData.nombre}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nombre: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setFormData({ ...formData, nombre: e.target.value });
+                    if (fieldErrors.nombre) {
+                      setFieldErrors({ ...fieldErrors, nombre: '' });
+                    }
+                  }}
                   placeholder="Nombre del banco"
-                  className={styles.formInput}
-                  required
+                  error={fieldErrors.nombre || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, nombre: error || '' });
+                  }}
                 />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>
-                  Código <span className={styles.required}>*</span>
-                </label>
-                <input
-                  type="text"
+                <Input
+                  label="Código"
+                  required
                   value={formData.codigo}
-                  onChange={(e) =>
-                    setFormData({ ...formData, codigo: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setFormData({ ...formData, codigo: e.target.value });
+                    if (fieldErrors.codigo) {
+                      setFieldErrors({ ...fieldErrors, codigo: '' });
+                    }
+                  }}
                   placeholder="Ej: BN001"
-                  className={styles.formInput}
-                  required
+                  error={fieldErrors.codigo || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, codigo: error || '' });
+                  }}
                 />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>
-                  Tipo <span className={styles.required}>*</span>
-                </label>
-                <select
+                <Select
+                  label="Tipo"
+                  required
                   value={formData.tipo}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setFormData({
                       ...formData,
                       tipo: e.target.value as 'PRIVADO' | 'GOBIERNO',
-                    })
-                  }
-                  className={styles.formSelect}
-                  required
-                >
-                  <option value="PRIVADO">Privado</option>
-                  <option value="GOBIERNO">Gobierno</option>
-                </select>
+                    });
+                    if (fieldErrors.tipo) {
+                      setFieldErrors({ ...fieldErrors, tipo: '' });
+                    }
+                  }}
+                  options={[
+                    { value: 'PRIVADO', label: 'Privado' },
+                    { value: 'GOBIERNO', label: 'Gobierno' },
+                  ]}
+                  placeholder="Seleccionar tipo"
+                  error={fieldErrors.tipo || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, tipo: error || '' });
+                  }}
+                />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>Estado</label>
-                <select
+                <Select
+                  label="Estado"
                   value={formData.estado || 'activo'}
                   onChange={(e) =>
                     setFormData({
@@ -238,22 +326,29 @@ export function BancoCreatePage(): React.JSX.Element {
                       estado: e.target.value as 'activo' | 'inactivo',
                     })
                   }
-                  className={styles.formSelect}
-                >
-                  <option value="activo">Activo</option>
-                  <option value="inactivo">Inactivo</option>
-                </select>
+                  options={[
+                    { value: 'activo', label: 'Activo' },
+                    { value: 'inactivo', label: 'Inactivo' },
+                  ]}
+                  placeholder="Seleccionar estado"
+                />
               </div>
               <div className={`${styles.formField} ${styles.formFieldFull}`}>
-                <label className={styles.formLabel}>Dirección</label>
-                <input
-                  type="text"
+                <Input
+                  label="Dirección"
+                  required
                   value={formData.direccion || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, direccion: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setFormData({ ...formData, direccion: e.target.value });
+                    if (fieldErrors.direccion) {
+                      setFieldErrors({ ...fieldErrors, direccion: '' });
+                    }
+                  }}
                   placeholder="Dirección completa"
-                  className={styles.formInput}
+                  error={fieldErrors.direccion || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, direccion: error || '' });
+                  }}
                 />
               </div>
             </div>
@@ -263,27 +358,43 @@ export function BancoCreatePage(): React.JSX.Element {
             <h3 className={styles.formSectionTitle}>Contacto</h3>
             <div className={styles.formGrid}>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>Email</label>
-                <input
+                <Input
+                  label="Email"
+                  required
                   type="email"
+                  validationType="email"
                   value={formData.email || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    if (fieldErrors.email) {
+                      setFieldErrors({ ...fieldErrors, email: '' });
+                    }
+                  }}
                   placeholder="contacto@banco.com"
-                  className={styles.formInput}
+                  error={fieldErrors.email || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, email: error || '' });
+                  }}
                 />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>Teléfono</label>
-                <input
-                  type="text"
+                <Input
+                  label="Teléfono"
+                  required
+                  type="tel"
+                  validationType="phone"
                   value={formData.telefono || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, telefono: e.target.value })
-                  }
-                  placeholder="+52 55 1234 5678"
-                  className={styles.formInput}
+                  onChange={(e) => {
+                    setFormData({ ...formData, telefono: e.target.value });
+                    if (fieldErrors.telefono) {
+                      setFieldErrors({ ...fieldErrors, telefono: '' });
+                    }
+                  }}
+                  placeholder="+1 555 123 4567"
+                  error={fieldErrors.telefono || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, telefono: error || '' });
+                  }}
                 />
               </div>
               <div className={styles.formField}>
@@ -448,5 +559,6 @@ export function BancoCreatePage(): React.JSX.Element {
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -15,8 +15,11 @@ import type { ClienteListItem } from '../../types/cliente';
 import type { Banco } from '../../types/banco';
 import { formatCurrency, calculateCuotaMensual, calculateMontoTotal } from '../../utils/format';
 import { ROUTES } from '../../app/config/constants';
-import { ApiError } from '../../utils/error';
+import { ApiError, getErrorMessage } from '../../utils/error';
 import { BackButton } from '../../components/ui/BackButton/BackButton';
+import { Alert } from '../../components/ui/Alert/Alert';
+import { Select } from '../../components/ui/Select/Select';
+import { isRequired, isPositiveNumber, isInRange } from '../../utils/validation';
 import styles from './Creditos.module.css';
 
 /**
@@ -31,6 +34,9 @@ export function CreditoCreatePage(): React.JSX.Element {
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
   const [clientes, setClientes] = useState<ClienteListItem[]>([]);
   const [bancos, setBancos] = useState<Banco[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
@@ -107,62 +113,72 @@ export function CreditoCreatePage(): React.JSX.Element {
   }, [isEdit]);
 
   const handleSave = async () => {
-    // Validaciones básicas
-    if (!formData.cliente || formData.cliente === 0) {
-      setError('Debe seleccionar un cliente');
+    // Validaciones de campos requeridos - errores individuales
+    const newFieldErrors: Record<string, string> = {};
+
+    if (!isPositiveNumber(formData.cliente)) {
+      newFieldErrors.cliente = 'Debe seleccionar un cliente';
+    }
+
+    if (!isPositiveNumber(formData.banco)) {
+      newFieldErrors.banco = 'Debe seleccionar un banco';
+    }
+
+    if (!isRequired(formData.descripcion)) {
+      newFieldErrors.descripcion = 'La descripción es requerida';
+    }
+
+    if (!isPositiveNumber(formData.pago_minimo)) {
+      newFieldErrors.pago_minimo = 'El pago mínimo es requerido y debe ser mayor a 0';
+    }
+
+    if (!isPositiveNumber(formData.pago_maximo)) {
+      newFieldErrors.pago_maximo = 'El pago máximo es requerido y debe ser mayor a 0';
+    }
+
+    if (isPositiveNumber(formData.pago_minimo) && isPositiveNumber(formData.pago_maximo)) {
+      const pagoMin = parseFloat(formData.pago_minimo);
+      const pagoMax = parseFloat(formData.pago_maximo);
+      if (pagoMin > pagoMax) {
+        newFieldErrors.pago_maximo = 'El pago mínimo no puede ser mayor que el pago máximo';
+      }
+    }
+
+    if (!isPositiveNumber(formData.plazo_meses)) {
+      newFieldErrors.plazo_meses = 'El plazo en meses es requerido y debe ser mayor a 0';
+    } else if (!isInRange(formData.plazo_meses, 1, 600)) {
+      newFieldErrors.plazo_meses = 'El plazo en meses debe estar entre 1 y 600 meses';
+    }
+
+    if (!isPositiveNumber(formData.tasa_interes)) {
+      newFieldErrors.tasa_interes = 'La tasa de interés es requerida y debe ser mayor a 0';
+    } else if (!isInRange(parseFloat(formData.tasa_interes), 0.01, 100)) {
+      newFieldErrors.tasa_interes = 'La tasa de interés debe estar entre 0.01% y 100%';
+    }
+
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors);
       return;
     }
 
-    if (!formData.banco || formData.banco === 0) {
-      setError('Debe seleccionar un banco');
-      return;
-    }
-
-    if (!formData.descripcion.trim()) {
-      setError('La descripción es requerida');
-      return;
-    }
-
-    if (!formData.pago_minimo || parseFloat(formData.pago_minimo) <= 0) {
-      setError('El pago mínimo debe ser mayor a 0');
-      return;
-    }
-
-    if (!formData.pago_maximo || parseFloat(formData.pago_maximo) <= 0) {
-      setError('El pago máximo debe ser mayor a 0');
-      return;
-    }
-
-    if (parseFloat(formData.pago_minimo) > parseFloat(formData.pago_maximo)) {
-      setError('El pago mínimo no puede ser mayor al pago máximo');
-      return;
-    }
-
-    if (!formData.plazo_meses || formData.plazo_meses <= 0) {
-      setError('El plazo en meses debe ser mayor a 0');
-      return;
-    }
-
-    if (!formData.tasa_interes || parseFloat(formData.tasa_interes) <= 0) {
-      setError('La tasa de interés debe ser mayor a 0');
-      return;
-    }
-
+    setFieldErrors({});
     setSaving(true);
     setError(null);
 
     try {
       if (isEdit && existingCredito && 'id' in existingCredito) {
         await creditosService.update(existingCredito.id, formData);
+        setAlertMessage('Crédito actualizado exitosamente');
       } else {
         await creditosService.create(formData);
+        setAlertMessage('Crédito creado exitosamente');
       }
-      navigate(ROUTES.CREDITOS);
+      setShowAlert(true);
+      setTimeout(() => {
+        navigate(ROUTES.CREDITOS);
+      }, 500);
     } catch (err) {
-      const errorMessage =
-        err instanceof ApiError
-          ? err.message
-          : 'Error al guardar el crédito. Por favor, intenta nuevamente.';
+      const errorMessage = getErrorMessage(err) || 'Error al guardar el crédito. Por favor, intenta nuevamente.';
       setError(errorMessage);
       console.error('Error saving credito:', err);
     } finally {
@@ -181,7 +197,14 @@ export function CreditoCreatePage(): React.JSX.Element {
   const montoTotal = cuotaMensual > 0 ? calculateMontoTotal(cuotaMensual, formData.plazo_meses) : 0;
 
   return (
-    <div className={styles.container}>
+    <>
+      <Alert
+        type="success"
+        title={alertMessage}
+        isVisible={showAlert}
+        onClose={() => setShowAlert(false)}
+      />
+      <div className={styles.container}>
       <div className={styles.formCard}>
         <div className={styles.formHeader}>
           <div className={styles.formHeaderLeft}>
@@ -210,52 +233,65 @@ export function CreditoCreatePage(): React.JSX.Element {
             <h3 className={styles.formSectionTitle}>Información del Crédito</h3>
             <div className={styles.formGrid}>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>
-                  Cliente <span className={styles.required}>*</span>
-                </label>
-                <select
-                  value={formData.cliente || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, cliente: parseInt(e.target.value, 10) })
-                  }
-                  className={styles.formSelect}
-                  disabled={loadingOptions}
+                <Select
+                  label="Cliente"
                   required
-                >
-                  <option value="0">Seleccionar cliente</option>
-                  {clientes.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nombre_completo}
-                    </option>
-                  ))}
-                </select>
+                  value={formData.cliente ? String(formData.cliente) : ''}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    setFormData({ ...formData, cliente: newValue ? parseInt(newValue, 10) : 0 });
+                    if (fieldErrors.cliente) {
+                      setFieldErrors({ ...fieldErrors, cliente: '' });
+                    }
+                  }}
+                  options={[
+                    { value: '0', label: 'Seleccionar cliente' },
+                    ...clientes.map((c) => ({
+                      value: String(c.id),
+                      label: c.nombre_completo,
+                    })),
+                  ]}
+                  error={fieldErrors.cliente || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, cliente: error || '' });
+                  }}
+                  disabled={loadingOptions}
+                  validateNotZero
+                  placeholder="Seleccionar cliente"
+                />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>
-                  Banco <span className={styles.required}>*</span>
-                </label>
-                <select
-                  value={formData.banco || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, banco: parseInt(e.target.value, 10) })
-                  }
-                  className={styles.formSelect}
-                  disabled={loadingOptions}
+                <Select
+                  label="Banco"
                   required
-                >
-                  <option value="0">Seleccionar banco</option>
-                  {bancos.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.nombre}
-                    </option>
-                  ))}
-                </select>
+                  value={formData.banco ? String(formData.banco) : ''}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    setFormData({ ...formData, banco: newValue ? parseInt(newValue, 10) : 0 });
+                    if (fieldErrors.banco) {
+                      setFieldErrors({ ...fieldErrors, banco: '' });
+                    }
+                  }}
+                  options={[
+                    { value: '0', label: 'Seleccionar banco' },
+                    ...bancos.map((b) => ({
+                      value: String(b.id),
+                      label: b.nombre,
+                    })),
+                  ]}
+                  error={fieldErrors.banco || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, banco: error || '' });
+                  }}
+                  disabled={loadingOptions}
+                  validateNotZero
+                  placeholder="Seleccionar banco"
+                />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>
-                  Tipo de Crédito <span className={styles.required}>*</span>
-                </label>
-                <select
+                <Select
+                  label="Tipo de Crédito"
+                  required
                   value={formData.tipo_credito}
                   onChange={(e) =>
                     setFormData({
@@ -263,13 +299,13 @@ export function CreditoCreatePage(): React.JSX.Element {
                       tipo_credito: e.target.value as 'AUTOMOTRIZ' | 'HIPOTECARIO' | 'COMERCIAL',
                     })
                   }
-                  className={styles.formSelect}
-                  required
-                >
-                  <option value="AUTOMOTRIZ">Automotriz</option>
-                  <option value="HIPOTECARIO">Hipotecario</option>
-                  <option value="COMERCIAL">Comercial</option>
-                </select>
+                  options={[
+                    { value: 'AUTOMOTRIZ', label: 'Automotriz' },
+                    { value: 'HIPOTECARIO', label: 'Hipotecario' },
+                    { value: 'COMERCIAL', label: 'Comercial' },
+                  ]}
+                  placeholder="Seleccionar tipo"
+                />
               </div>
             </div>
             <div className={styles.formGrid}>
@@ -277,16 +313,24 @@ export function CreditoCreatePage(): React.JSX.Element {
                 <label className={styles.formLabel}>
                   Descripción <span className={styles.required}>*</span>
                 </label>
-                <input
-                  type="text"
-                  value={formData.descripcion}
-                  onChange={(e) =>
-                    setFormData({ ...formData, descripcion: e.target.value })
-                  }
-                  placeholder="Descripción del crédito"
-                  className={styles.formInput}
-                  required
-                />
+                <div className={styles.inputWrapper}>
+                  <input
+                    type="text"
+                    value={formData.descripcion}
+                    onChange={(e) => {
+                      setFormData({ ...formData, descripcion: e.target.value });
+                      if (fieldErrors.descripcion) {
+                        setFieldErrors({ ...fieldErrors, descripcion: '' });
+                      }
+                    }}
+                    placeholder="Descripción del crédito"
+                    className={`${styles.formInput} ${fieldErrors.descripcion ? styles.formInputError : ''}`}
+                    required
+                  />
+                  {fieldErrors.descripcion && (
+                    <span className={styles.fieldError}>{fieldErrors.descripcion}</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -298,71 +342,103 @@ export function CreditoCreatePage(): React.JSX.Element {
                 <label className={styles.formLabel}>
                   Pago Mínimo (MXN) <span className={styles.required}>*</span>
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  value={formData.pago_minimo}
-                  onChange={(e) =>
-                    setFormData({ ...formData, pago_minimo: e.target.value })
-                  }
-                  placeholder="0.00"
-                  className={styles.formInput}
-                  required
-                />
+                <div className={styles.inputWrapper}>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={formData.pago_minimo}
+                    onChange={(e) => {
+                      setFormData({ ...formData, pago_minimo: e.target.value });
+                      if (fieldErrors.pago_minimo) {
+                        setFieldErrors({ ...fieldErrors, pago_minimo: '' });
+                      }
+                    }}
+                    placeholder="0.00"
+                    className={`${styles.formInput} ${fieldErrors.pago_minimo ? styles.formInputError : ''}`}
+                    required
+                  />
+                  {fieldErrors.pago_minimo && (
+                    <span className={styles.fieldError}>{fieldErrors.pago_minimo}</span>
+                  )}
+                </div>
               </div>
               <div className={styles.formField}>
                 <label className={styles.formLabel}>
                   Pago Máximo (MXN) <span className={styles.required}>*</span>
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  value={formData.pago_maximo}
-                  onChange={(e) =>
-                    setFormData({ ...formData, pago_maximo: e.target.value })
-                  }
-                  placeholder="0.00"
-                  className={styles.formInput}
-                  required
-                />
+                <div className={styles.inputWrapper}>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={formData.pago_maximo}
+                    onChange={(e) => {
+                      setFormData({ ...formData, pago_maximo: e.target.value });
+                      if (fieldErrors.pago_maximo) {
+                        setFieldErrors({ ...fieldErrors, pago_maximo: '' });
+                      }
+                    }}
+                    placeholder="0.00"
+                    className={`${styles.formInput} ${fieldErrors.pago_maximo ? styles.formInputError : ''}`}
+                    required
+                  />
+                  {fieldErrors.pago_maximo && (
+                    <span className={styles.fieldError}>{fieldErrors.pago_maximo}</span>
+                  )}
+                </div>
               </div>
               <div className={styles.formField}>
                 <label className={styles.formLabel}>
                   Plazo (meses) <span className={styles.required}>*</span>
                 </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={formData.plazo_meses}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      plazo_meses: parseInt(e.target.value, 10) || 0,
-                    })
-                  }
-                  placeholder="12"
-                  className={styles.formInput}
-                  required
-                />
+                <div className={styles.inputWrapper}>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.plazo_meses}
+                    onChange={(e) => {
+                      setFormData({
+                        ...formData,
+                        plazo_meses: parseInt(e.target.value, 10) || 0,
+                      });
+                      if (fieldErrors.plazo_meses) {
+                        setFieldErrors({ ...fieldErrors, plazo_meses: '' });
+                      }
+                    }}
+                    placeholder="12"
+                    className={`${styles.formInput} ${fieldErrors.plazo_meses ? styles.formInputError : ''}`}
+                    required
+                  />
+                  {fieldErrors.plazo_meses && (
+                    <span className={styles.fieldError}>{fieldErrors.plazo_meses}</span>
+                  )}
+                </div>
               </div>
               <div className={styles.formField}>
                 <label className={styles.formLabel}>
                   Tasa de Interés Anual (%) <span className={styles.required}>*</span>
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  value={formData.tasa_interes}
-                  onChange={(e) =>
-                    setFormData({ ...formData, tasa_interes: e.target.value })
-                  }
-                  placeholder="12.00"
-                  className={styles.formInput}
-                  required
-                />
+                <div className={styles.inputWrapper}>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={formData.tasa_interes}
+                    onChange={(e) => {
+                      setFormData({ ...formData, tasa_interes: e.target.value });
+                      if (fieldErrors.tasa_interes) {
+                        setFieldErrors({ ...fieldErrors, tasa_interes: '' });
+                      }
+                    }}
+                    placeholder="12.00"
+                    className={`${styles.formInput} ${fieldErrors.tasa_interes ? styles.formInputError : ''}`}
+                    required
+                  />
+                  {fieldErrors.tasa_interes && (
+                    <span className={styles.fieldError}>{fieldErrors.tasa_interes}</span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -418,6 +494,7 @@ export function CreditoCreatePage(): React.JSX.Element {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

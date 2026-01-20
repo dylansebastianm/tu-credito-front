@@ -1,10 +1,71 @@
 /**
  * Input Styles - Tu Crédito Frontend
- * 
- * UI IMPLEMENTATION PROVIDED BY VERCEL v0 – PLACEHOLDER ONLY
- * Este archivo será reemplazado cuando se integre el diseño de v0
+ * Componente de input con validación integrada
  */
 
 .wrapper {
-  /* Placeholder - será reemplazado por v0 */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.required {
+  color: #dc2626;
+  margin-left: 2px;
+}
+
+.inputWrapper {
+  position: relative;
+}
+
+.input {
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+  background: white;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.input.error {
+  border-color: #ef4444;
+}
+
+.input.error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.input::placeholder {
+  color: #9ca3af;
+}
+
+.input:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.errorMessage {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #ef4444;
+  line-height: 1.4;
 }

@@ -714,6 +714,10 @@
   color: #dc2626;
 }
 
+.inputWrapper {
+  position: relative;
+}
+
 .formInput,
 .formSelect {
   padding: 12px 14px;
@@ -733,8 +737,29 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+.formInput.formInputError,
+.formSelect.formInputError {
+  border-color: #ef4444;
+}
+
+.formInput.formInputError:focus,
+.formSelect.formInputError:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
 .formInput::placeholder {
   color: #9ca3af;
+}
+
+.fieldError {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #ef4444;
+  line-height: 1.4;
 }
 
 .formSelect {

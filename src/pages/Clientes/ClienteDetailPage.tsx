@@ -11,7 +11,7 @@ import type { Cliente } from '../../types/cliente';
 import { formatDate } from '../../utils/format';
 import { ROUTES } from '../../app/config/constants';
 import { CustomerDetailCard } from '../../components/domain/CustomerDetailCard/CustomerDetailCard';
-import { ApiError } from '../../utils/error';
+import { ApiError, getErrorMessage } from '../../utils/error';
 import styles from './Clientes.module.css';
 
 /**
@@ -51,10 +51,7 @@ export function ClienteDetailPage(): React.JSX.Element {
           description: `Detalle del cliente ${data.nombre_completo}`,
         });
       } catch (err) {
-        const errorMessage =
-          err instanceof ApiError
-            ? err.message
-            : 'Error al cargar el cliente. Por favor, intenta nuevamente.';
+        const errorMessage = getErrorMessage(err) || 'Error al cargar el cliente. Por favor, intenta nuevamente.';
         setError(errorMessage);
         console.error('Error loading cliente:', err);
       } finally {

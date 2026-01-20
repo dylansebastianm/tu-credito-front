@@ -7,7 +7,7 @@ import { ENV } from '../app/config/env';
 import { ApiError } from '../utils/error';
 import type { ApiRequestOptions, ApiErrorResponse } from '../types/api';
 import { buildQueryString } from '../utils/queryParams';
-import { STORAGE_KEYS } from '../app/config/constants';
+import { STORAGE_KEYS, ROUTES } from '../app/config/constants';
 
 /**
  * Referencia al contexto de loading
@@ -28,6 +28,20 @@ export function setLoadingContext(context: { incrementLoading: () => void; decre
  */
 function getAuthToken(): string | null {
   return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+}
+
+/**
+ * Desloguea al usuario y redirige al login
+ * Se llama automáticamente cuando se detecta un error 401
+ */
+function handleUnauthorized(): void {
+  // Limpiar tokens
+  localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+  
+  // Redirigir al login
+  // Usamos window.location para forzar una recarga completa y limpiar el estado de React
+  window.location.href = ROUTES.LOGIN;
 }
 
 /**
@@ -90,6 +104,11 @@ export async function apiClient<T>(
         errorResponse = await response.json();
       } catch {
         // Si no se puede parsear el JSON, usar el texto del error
+      }
+
+      // Si es un error 401 (no autorizado), desloguear automáticamente
+      if (response.status === 401) {
+        handleUnauthorized();
       }
 
       const errorMessage = errorResponse?.detail || errorResponse?.message || response.statusText;
