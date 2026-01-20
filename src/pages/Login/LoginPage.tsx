@@ -10,6 +10,7 @@ import { setDocumentMeta } from '../../utils/meta';
 import { authService } from '../../services/auth.service';
 import { ROUTES } from '../../app/config/constants';
 import { Button } from '../../components/ui/Button/Button';
+import { getErrorMessage } from '../../utils/error';
 import styles from './LoginPage.module.css';
 
 /**
@@ -42,7 +43,7 @@ export function LoginPage(): React.JSX.Element {
     setLoading(true);
 
     try {
-      await authService.login({ username, password });
+      await authService.login({ email, password });
       navigate(ROUTES.DASHBOARD);
     } catch (err) {
       const errorMessage = getErrorMessage(err);
@@ -73,20 +74,20 @@ export function LoginPage(): React.JSX.Element {
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.field}>
-              <label htmlFor="username" className={styles.label}>
-                Usuario
+              <label htmlFor="email" className={styles.label}>
+                Email
               </label>
               <div className={styles.inputWrapper}>
                 <FaEnvelope className={styles.inputIcon} />
                 <input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Ingresa tu usuario"
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Ingresa tu email"
                   required
                   className={styles.input}
-                  autoComplete="username"
+                  autoComplete="email"
                 />
               </div>
             </div>

@@ -357,24 +357,6 @@
 /* FORM STYLES          */
 /* ==================== */
 
-.backButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-  background: none;
-  border: none;
-  color: #6b7280;
-  font-size: 0.875rem;
-  cursor: pointer;
-  margin-bottom: 16px;
-  transition: color 0.15s ease;
-}
-
-.backButton:hover {
-  color: #111827;
-}
-
 .formCard {
   background: white;
   border: 1px solid #e5e7eb;
@@ -383,21 +365,33 @@
 }
 
 .formHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 24px;
   border-bottom: 1px solid #e5e7eb;
 }
 
+.formHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* BackButton ahora es un componente UI modularizado */
+
 .formTitle {
-  font-size: 1.25rem;
+  font-size: 24px;
   font-weight: 600;
-  color: #111827;
-  margin: 0 0 4px 0;
+  color: #1f2937;
+  margin: 0;
 }
 
 .formSubtitle {
-  font-size: 0.875rem;
+  font-size: 14px;
   color: #6b7280;
   margin: 0;
+  margin-top: 2px;
 }
 
 .formBody {
@@ -405,7 +399,13 @@
 }
 
 .formSection {
-  margin-bottom: 32px;
+  margin-top: 24px;
+  padding-top: 24px;
+}
+
+.formSection:first-child {
+  margin-top: 0;
+  padding-top: 0;
 }
 
 .formSection:last-child {

@@ -109,15 +109,8 @@ export function BancosListPage(): React.JSX.Element {
     }
   };
 
-  if (loading && bancos.length === 0) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.errorState}>
-          <p className={styles.errorText}>Cargando bancos...</p>
-        </div>
-      </div>
-    );
-  }
+  // El loading global se muestra automáticamente durante las peticiones
+  // No mostramos nada aquí, solo el spinner global
 
   if (error && bancos.length === 0) {
     return (

@@ -19,23 +19,7 @@
   gap: 16px;
 }
 
-.backButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  background-color: #f3f4f6;
-  border: none;
-  border-radius: 50%;
-  color: #374151;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.backButton:hover {
-  background-color: #e5e7eb;
-}
+/* BackButton ahora es un componente UI modularizado */
 
 .titleGroup {
   display: flex;

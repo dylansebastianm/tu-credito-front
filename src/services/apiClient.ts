@@ -10,6 +10,20 @@ import { buildQueryString } from '../utils/queryParams';
 import { STORAGE_KEYS } from '../app/config/constants';
 
 /**
+ * Referencia al contexto de loading
+ * Se inicializa dinámicamente para evitar dependencias circulares
+ */
+let loadingContext: { incrementLoading: () => void; decrementLoading: () => void } | null = null;
+
+/**
+ * Establece el contexto de loading
+ * Debe ser llamado desde el componente que tiene acceso al contexto
+ */
+export function setLoadingContext(context: { incrementLoading: () => void; decrementLoading: () => void }): void {
+  loadingContext = context;
+}
+
+/**
  * Obtiene el token de autenticación
  */
 function getAuthToken(): string | null {
@@ -62,6 +76,9 @@ export async function apiClient<T>(
     config.body = JSON.stringify(body);
   }
 
+  // Activar loading ANTES del fetch
+  loadingContext?.incrementLoading();
+
   try {
     const response = await fetch(url, config);
 
@@ -97,6 +114,9 @@ export async function apiClient<T>(
       error instanceof Error ? error.message : 'Error de red desconocido',
       0
     );
+  } finally {
+    // Desactivar loading siempre, incluso si hay error
+    loadingContext?.decrementLoading();
   }
 }
 

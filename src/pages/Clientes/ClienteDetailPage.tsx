@@ -65,13 +65,8 @@ export function ClienteDetailPage(): React.JSX.Element {
     loadCliente();
   }, [id]);
 
-  if (loading) {
-    return (
-      <div className={styles.container}>
-        <p>Cargando cliente...</p>
-      </div>
-    );
-  }
+  // El loading global se muestra automáticamente durante las peticiones
+  // No mostramos nada aquí, solo el spinner global
 
   if (error || !cliente) {
     return (

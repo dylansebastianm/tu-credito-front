@@ -175,9 +175,7 @@ export function ClientesListPage(): React.JSX.Element {
         }}
         footer={
           <>
-            {loading ? (
-              'Cargando...'
-            ) : (
+            {!loading && (
               <>
                 Mostrando {clientes.length} de {totalCount} clientes
                 {totalCount > pageSize && (
@@ -222,13 +220,7 @@ export function ClientesListPage(): React.JSX.Element {
           </tr>
         </thead>
         <tbody>
-          {loading ? (
-            <tr>
-              <td colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
-                Cargando clientes...
-              </td>
-            </tr>
-          ) : clientes.length === 0 ? (
+          {!loading && clientes.length === 0 ? (
             <tr>
               <td colSpan={6}>
                 <div className={styles.emptyState}>

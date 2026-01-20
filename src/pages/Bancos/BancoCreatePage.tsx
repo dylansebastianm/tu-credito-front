@@ -5,11 +5,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaSave, FaTimes } from 'react-icons/fa';
+import { FaSave, FaTimes } from 'react-icons/fa';
 import { setDocumentMeta } from '../../utils/meta';
 import { ROUTES } from '../../app/config/constants';
 import { bancosService } from '../../services/bancos.service';
 import type { Banco, BancoCreate, BancoListItem } from '../../types/banco';
+import { BackButton } from '../../components/ui/BackButton/BackButton';
 import styles from './Bancos.module.css';
 
 /**
@@ -152,24 +153,6 @@ export function BancoCreatePage(): React.JSX.Element {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <button
-          onClick={() => navigate(ROUTES.BANCOS)}
-          className={styles.secondaryButton}
-        >
-          <FaArrowLeft />
-          Volver
-        </button>
-        <h1 className={styles.title}>
-          {isEdit ? 'Editar Banco' : 'Nuevo Banco'}
-        </h1>
-        <p className={styles.subtitle}>
-          {isEdit
-            ? 'Modifica los datos del banco'
-            : 'Completa los datos del nuevo banco'}
-        </p>
-      </div>
-
       {error && (
         <div className={styles.alert}>
           <p className={styles.alertText}>{error}</p>
@@ -177,6 +160,21 @@ export function BancoCreatePage(): React.JSX.Element {
       )}
 
       <div className={styles.formCard}>
+        <div className={styles.formHeader}>
+          <div className={styles.formHeaderLeft}>
+            <BackButton onClick={() => navigate(ROUTES.BANCOS)} />
+            <div>
+              <h1 className={styles.formTitle}>
+                {isEdit ? 'Editar Banco' : 'Nuevo Banco'}
+              </h1>
+              <p className={styles.formSubtitle}>
+                {isEdit
+                  ? 'Modifica los datos del banco'
+                  : 'Completa los datos del nuevo banco'}
+              </p>
+            </div>
+          </div>
+        </div>
         <div className={styles.form}>
           <div className={styles.formSection}>
             <h3 className={styles.formSectionTitle}>Información General</h3>

@@ -182,9 +182,7 @@ export function CreditosListPage(): React.JSX.Element {
         }}
         footer={
           <>
-            {loading ? (
-              'Cargando...'
-            ) : (
+            {!loading && (
               <>
                 Mostrando {creditos.length} de {totalCount} créditos
                 {totalCount > pageSize && (
@@ -231,13 +229,7 @@ export function CreditosListPage(): React.JSX.Element {
           </tr>
         </thead>
         <tbody>
-          {loading ? (
-            <tr>
-              <td colSpan={8} style={{ textAlign: 'center', padding: '2rem' }}>
-                Cargando créditos...
-              </td>
-            </tr>
-          ) : creditos.length === 0 ? (
+          {!loading && creditos.length === 0 ? (
             <tr>
               <td colSpan={8}>
                 <div className={styles.emptyState}>

@@ -64,13 +64,8 @@ export function CreditoDetailPage(): React.JSX.Element {
     loadCredito();
   }, [id]);
 
-  if (loading) {
-    return (
-      <div className={styles.container}>
-        <p>Cargando crédito...</p>
-      </div>
-    );
-  }
+  // El loading global se muestra automáticamente durante las peticiones
+  // No mostramos nada aquí, solo el spinner global
 
   if (error || !credito) {
     return (

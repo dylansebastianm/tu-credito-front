@@ -1,5 +1,6 @@
 import React from 'react';
-import { HiOutlineChevronLeft, HiOutlinePencil } from 'react-icons/hi';
+import { HiOutlinePencil } from 'react-icons/hi';
+import { BackButton } from '../../ui/BackButton/BackButton';
 import styles from './DetailCardShell.module.css';
 
 export type DetailStatus = 'activo' | 'inactivo' | 'pendiente';
@@ -35,9 +36,7 @@ export function DetailCardShell({
     <div className={styles.card}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <button className={styles.backButton} onClick={onBack} aria-label="Volver">
-            <HiOutlineChevronLeft size={12} />
-          </button>
+          {onBack && <BackButton onClick={onBack} />}
           <div>
             <div className={styles.titleGroup}>
               <h1 className={styles.title}>{title}</h1>

@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaSave, FaTimes } from 'react-icons/fa';
+import { FaSave, FaTimes } from 'react-icons/fa';
 import { setDocumentMeta } from '../../utils/meta';
 import { creditosService } from '../../services/creditos.service';
 import { clientesService } from '../../services/clientes.service';
@@ -16,6 +16,7 @@ import type { Banco } from '../../types/banco';
 import { formatCurrency, calculateCuotaMensual, calculateMontoTotal } from '../../utils/format';
 import { ROUTES } from '../../app/config/constants';
 import { ApiError } from '../../utils/error';
+import { BackButton } from '../../components/ui/BackButton/BackButton';
 import styles from './Creditos.module.css';
 
 /**
@@ -169,8 +170,8 @@ export function CreditoCreatePage(): React.JSX.Element {
     }
   };
 
-  // Calcular valores financieros para mostrar (preview antes de guardar)
-  // El backend calculará estos valores automáticamente al guardar
+  // Calcular valores financieros estimados para mostrar (preview antes de guardar)
+  // El backend calculará automáticamente los valores finales al guardar usando la fórmula de amortización
   const pagoMaximoNum = parseFloat(formData.pago_maximo) || 0;
   const tasaInteresNum = parseFloat(formData.tasa_interes) || 12;
   const cuotaMensual =
@@ -181,51 +182,29 @@ export function CreditoCreatePage(): React.JSX.Element {
 
   return (
     <div className={styles.container}>
-      <nav className={styles.breadcrumb}>
-        <span
-          className={styles.breadcrumbLink}
-          onClick={() => navigate(ROUTES.DASHBOARD)}
-        >
-          Inicio
-        </span>
-        <span className={styles.breadcrumbSeparator}>/</span>
-        <span
-          className={styles.breadcrumbLink}
-          onClick={() => navigate(ROUTES.CREDITOS)}
-        >
-          Créditos
-        </span>
-        <span className={styles.breadcrumbSeparator}>/</span>
-        <span className={styles.breadcrumbCurrent}>
-          {isEdit ? 'Editar' : 'Nuevo'}
-        </span>
-      </nav>
-
-      <div className={styles.header}>
-        <button
-          onClick={() => navigate(ROUTES.CREDITOS)}
-          className={styles.secondaryButton}
-        >
-          <FaArrowLeft />
-          Volver
-        </button>
-        <h1 className={styles.title}>
-          {isEdit ? 'Editar Crédito' : 'Nuevo Crédito'}
-        </h1>
-        <p className={styles.subtitle}>
-          {isEdit
-            ? 'Modifica los datos del crédito'
-            : 'Completa los datos del nuevo crédito'}
-        </p>
-      </div>
-
       <div className={styles.formCard}>
-        <div className={styles.form}>
-          {error && (
-            <div className={styles.alert}>
-              <p className={styles.alertText}>{error}</p>
+        <div className={styles.formHeader}>
+          <div className={styles.formHeaderLeft}>
+            <BackButton onClick={() => navigate(ROUTES.CREDITOS)} />
+            <div>
+              <h1 className={styles.formTitle}>
+                {isEdit ? 'Editar Crédito' : 'Nuevo Crédito'}
+              </h1>
+              <p className={styles.formSubtitle}>
+                {isEdit
+                  ? 'Modifica los datos del crédito'
+                  : 'Completa los datos del nuevo crédito'}
+              </p>
             </div>
-          )}
+          </div>
+        </div>
+        {error && (
+          <div className={styles.alert}>
+            <p className={styles.alertText}>{error}</p>
+          </div>
+        )}
+
+        <div className={styles.form}>
 
           <div className={styles.formSection}>
             <h3 className={styles.formSectionTitle}>Información del Crédito</h3>
@@ -405,7 +384,7 @@ export function CreditoCreatePage(): React.JSX.Element {
                   </div>
                 </div>
                 <p className={styles.calculationNote}>
-                  * Cálculo estimado. El backend calculará automáticamente estos valores al guardar.
+                  * Los valores mostrados son estimaciones basadas en las condiciones ingresadas. Las tasas y condiciones finales están sujetas a aprobación y pueden variar según el análisis crediticio.
                 </p>
               </div>
             )}

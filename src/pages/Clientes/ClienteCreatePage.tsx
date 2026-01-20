@@ -5,12 +5,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaSave, FaTimes } from 'react-icons/fa';
+import { FaSave, FaTimes } from 'react-icons/fa';
 import { setDocumentMeta } from '../../utils/meta';
 import { clientesService } from '../../services/clientes.service';
 import type { Cliente, ClienteCreate, ClienteListItem } from '../../types/cliente';
 import { ROUTES } from '../../app/config/constants';
 import { ApiError } from '../../utils/error';
+import { BackButton } from '../../components/ui/BackButton/BackButton';
 import styles from './Clientes.module.css';
 
 /**
@@ -115,25 +116,19 @@ export function ClienteCreatePage(): React.JSX.Element {
 
   return (
     <div className={styles.container}>
-      <nav className={styles.breadcrumb}>
-        <span className={styles.breadcrumbLink} onClick={() => navigate(ROUTES.DASHBOARD)}>Inicio</span>
-        <span className={styles.breadcrumbSeparator}>/</span>
-        <span className={styles.breadcrumbLink} onClick={() => navigate(ROUTES.CLIENTES)}>Clientes</span>
-        <span className={styles.breadcrumbSeparator}>/</span>
-        <span className={styles.breadcrumbCurrent}>{isEdit ? 'Editar' : 'Nuevo'}</span>
-      </nav>
-
-      <button onClick={() => navigate(ROUTES.CLIENTES)} className={styles.backButton}>
-        <FaArrowLeft />
-        Volver
-      </button>
-
       <div className={styles.formCard}>
         <div className={styles.formHeader}>
-          <h2 className={styles.formTitle}>{isEdit ? 'Editar Cliente' : 'Nuevo Cliente'}</h2>
-          <p className={styles.formSubtitle}>
-            {isEdit ? 'Modifica los datos del cliente' : 'Completa los datos del nuevo cliente'}
-          </p>
+          <div className={styles.formHeaderLeft}>
+            <BackButton onClick={() => navigate(ROUTES.CLIENTES)} />
+            <div>
+              <h1 className={styles.formTitle}>
+                {isEdit ? 'Editar Cliente' : 'Nuevo Cliente'}
+              </h1>
+              <p className={styles.formSubtitle}>
+                {isEdit ? 'Modifica los datos del cliente' : 'Completa los datos del nuevo cliente'}
+              </p>
+            </div>
+          </div>
         </div>
 
         {error && (

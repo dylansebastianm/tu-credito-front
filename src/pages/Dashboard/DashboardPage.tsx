@@ -219,11 +219,7 @@ export function DashboardPage(): React.JSX.Element {
               Ver todos
             </Button>
           </div>
-          {loading ? (
-            <div className={styles.loadingState}>
-              <p>Cargando créditos...</p>
-            </div>
-          ) : recentCreditos.length === 0 ? (
+          {!loading && recentCreditos.length === 0 ? (
             <div className={styles.emptyState}>
               <FaCreditCard className={styles.emptyIcon} />
               <p className={styles.emptyText}>No hay créditos registrados</p>

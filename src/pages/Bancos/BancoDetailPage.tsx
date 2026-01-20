@@ -49,15 +49,8 @@ export function BancoDetailPage(): React.JSX.Element {
     loadBanco();
   }, [id]);
 
-  if (loading) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.errorState}>
-          <p className={styles.errorText}>Cargando banco...</p>
-        </div>
-      </div>
-    );
-  }
+  // El loading global se muestra automáticamente durante las peticiones
+  // No mostramos nada aquí, solo el spinner global
 
   if (error || !banco) {
     return (
