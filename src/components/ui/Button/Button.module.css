@@ -1,10 +1,164 @@
 /**
  * Button Styles - Tu Crédito Frontend
- * 
- * UI IMPLEMENTATION PROVIDED BY VERCEL v0 – PLACEHOLDER ONLY
- * Este archivo será reemplazado cuando se integre el diseño de v0
+ * Estilos unificados basados en el botón del login
+ * Mismo estilo base, solo varía el color y el ancho
  */
 
+/* Base button styles - Igual al botón del login */
 .button {
-  /* Placeholder - será reemplazado por v0 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Icon styles */
+.icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* Variants - Solo cambian el color */
+.primary {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.primary:hover:not(:disabled) {
+  background-color: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.primary:active:not(:disabled) {
+  background-color: #1e40af;
+  border-color: #1e40af;
+}
+
+.secondary {
+  background-color: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.secondary:hover:not(:disabled) {
+  background-color: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.secondary:active:not(:disabled) {
+  background-color: #d1d5db;
+  border-color: #6b7280;
+}
+
+.outline {
+  background-color: transparent;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.outline:hover:not(:disabled) {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.outline:active:not(:disabled) {
+  background-color: #f3f4f6;
+  border-color: #6b7280;
+}
+
+.danger {
+  background-color: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+.danger:hover:not(:disabled) {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.danger:active:not(:disabled) {
+  background-color: #991b1b;
+  border-color: #991b1b;
+}
+
+.ghost {
+  background-color: transparent;
+  color: #6b7280;
+  border-color: transparent;
+  padding: 8px;
+}
+
+.ghost:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+
+.ghost:active:not(:disabled) {
+  background-color: #e5e7eb;
+  color: #111827;
+}
+
+/* Icons */
+.iconLeft,
+.iconRight {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.iconLeft {
+  width: 18px;
+  height: 18px;
+}
+
+.iconRight {
+  width: 18px;
+  height: 18px;
+}
+
+/* Spinner for loading state */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+.loading {
+  cursor: wait;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }

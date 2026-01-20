@@ -1,20 +1,12 @@
 /**
  * Public Layout Styles - Tu Crédito Frontend
- * 
- * UI IMPLEMENTATION PROVIDED BY VERCEL v0 – PLACEHOLDER ONLY
- * Este archivo será reemplazado cuando se integre el diseño de v0
+ * Layout mínimo para rutas públicas, sin interferir con el diseño
  */
 
 .layout {
-  display: flex;
-  flex-direction: column;
   min-height: 100vh;
 }
 
 .main {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-4);
+  min-height: 100vh;
 }

@@ -4,7 +4,12 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Layers, Layout, Server, Palette } from 'lucide-react';
+import {
+  FaLayerGroup,
+  FaTh,
+  FaServer,
+  FaPalette,
+} from 'react-icons/fa';
 import { setDocumentMeta } from '../../utils/meta';
 import styles from './DocsPage.module.css';
 
@@ -25,10 +30,10 @@ export function DocsPage(): React.JSX.Element {
   }, []);
 
   const tabs = [
-    { id: 'arquitectura' as TabId, label: 'Arquitectura', icon: Layers },
-    { id: 'componentes' as TabId, label: 'Componentes', icon: Layout },
-    { id: 'servicios' as TabId, label: 'Servicios', icon: Server },
-    { id: 'estilos' as TabId, label: 'Estilos', icon: Palette },
+    { id: 'arquitectura' as TabId, label: 'Arquitectura', icon: FaLayerGroup },
+    { id: 'componentes' as TabId, label: 'Componentes', icon: FaTh },
+    { id: 'servicios' as TabId, label: 'Servicios', icon: FaServer },
+    { id: 'estilos' as TabId, label: 'Estilos', icon: FaPalette },
   ];
 
   return (
@@ -59,7 +64,7 @@ export function DocsPage(): React.JSX.Element {
           <div className={styles.card}>
             <div className={styles.cardHeader}>
               <h2 className={styles.cardTitle}>
-                <Layers className={styles.cardTitleIcon} />
+                <FaLayerGroup className={styles.cardTitleIcon} />
                 Arquitectura del Sistema
               </h2>
               <p className={styles.cardDescription}>
@@ -138,7 +143,7 @@ export function DocsPage(): React.JSX.Element {
           <div className={styles.card}>
             <div className={styles.cardHeader}>
               <h2 className={styles.cardTitle}>
-                <Layout className={styles.cardTitleIcon} />
+                <FaTh className={styles.cardTitleIcon} />
                 Componentes del Sistema
               </h2>
               <p className={styles.cardDescription}>
@@ -206,7 +211,7 @@ export function DocsPage(): React.JSX.Element {
           <div className={styles.card}>
             <div className={styles.cardHeader}>
               <h2 className={styles.cardTitle}>
-                <Server className={styles.cardTitleIcon} />
+                <FaServer className={styles.cardTitleIcon} />
                 Servicios y Datos
               </h2>
               <p className={styles.cardDescription}>
@@ -281,7 +286,7 @@ const activity = getRecentActivity();`}
           <div className={styles.card}>
             <div className={styles.cardHeader}>
               <h2 className={styles.cardTitle}>
-                <Palette className={styles.cardTitleIcon} />
+                <FaPalette className={styles.cardTitleIcon} />
                 Sistema de Estilos
               </h2>
               <p className={styles.cardDescription}>

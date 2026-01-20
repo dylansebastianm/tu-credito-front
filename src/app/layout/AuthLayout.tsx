@@ -6,17 +6,17 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import {
-  LayoutDashboard,
-  Users,
-  CreditCard,
-  Building2,
-  FileText,
-  LogOut,
-  Menu,
-  X,
-  DollarSign,
-  User as UserIcon,
-} from 'lucide-react';
+  FaChartLine,
+  FaUsers,
+  FaCreditCard,
+  FaBuilding,
+  FaFileAlt,
+  FaSignOutAlt,
+  FaBars,
+  FaTimes,
+  FaDollarSign,
+  FaUser,
+} from 'react-icons/fa';
 import { authService } from '../../services/auth.service';
 import { ROUTES } from '../config/constants';
 import styles from './AuthLayout.module.css';
@@ -28,11 +28,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { route: ROUTES.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
-  { route: ROUTES.CLIENTES, label: 'Clientes', icon: Users },
-  { route: ROUTES.CREDITOS, label: 'Créditos', icon: CreditCard },
-  { route: ROUTES.BANCOS, label: 'Bancos', icon: Building2 },
-  { route: ROUTES.DOCS, label: 'Documentación', icon: FileText },
+  { route: ROUTES.DASHBOARD, label: 'Dashboard', icon: FaChartLine },
+  { route: ROUTES.CLIENTES, label: 'Clientes', icon: FaUsers },
+  { route: ROUTES.CREDITOS, label: 'Créditos', icon: FaCreditCard },
+  { route: ROUTES.BANCOS, label: 'Bancos', icon: FaBuilding },
+  { route: ROUTES.DOCS, label: 'Documentación', icon: FaFileAlt },
 ];
 
 const routeLabels: Record<string, string> = {
@@ -125,7 +125,7 @@ export function AuthLayout(): React.JSX.Element {
         <div className={styles.sidebarHeader}>
           <div className={styles.logo}>
             <div className={styles.logoIcon}>
-              <DollarSign className={styles.logoIconSvg} />
+              <FaDollarSign className={styles.logoIconSvg} />
             </div>
             <div className={styles.logoText}>
               <h1 className={styles.logoTitle}>Tu Credito</h1>
@@ -154,7 +154,7 @@ export function AuthLayout(): React.JSX.Element {
         <div className={styles.sidebarFooter}>
           <div className={styles.userInfo}>
             <div className={styles.userAvatar}>
-              <UserIcon className={styles.userAvatarIcon} />
+              <FaUser className={styles.userAvatarIcon} />
             </div>
             <div className={styles.userDetails}>
               <p className={styles.userName}>{userName}</p>
@@ -165,7 +165,7 @@ export function AuthLayout(): React.JSX.Element {
               className={styles.logoutButton}
               title="Cerrar sesión"
             >
-              <LogOut className={styles.logoutIcon} />
+              <FaSignOutAlt className={styles.logoutIcon} />
             </button>
           </div>
         </div>
@@ -180,9 +180,9 @@ export function AuthLayout(): React.JSX.Element {
               onClick={() => setSidebarOpen(!sidebarOpen)}
             >
               {sidebarOpen ? (
-                <X className={styles.menuIcon} />
+                <FaTimes className={styles.menuIcon} />
               ) : (
-                <Menu className={styles.menuIcon} />
+                <FaBars className={styles.menuIcon} />
               )}
             </button>
             <nav className={styles.breadcrumb}>

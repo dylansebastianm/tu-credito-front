@@ -6,17 +6,17 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Users,
-  CreditCard,
-  Building2,
-  TrendingUp,
-  TrendingDown,
-  Clock,
-  UserPlus,
-  FileText,
-  Plus,
-  ArrowUpRight,
-} from 'lucide-react';
+  FaUsers,
+  FaCreditCard,
+  FaBuilding,
+  FaArrowUp,
+  FaArrowDown,
+  FaClock,
+  FaUserPlus,
+  FaFileAlt,
+  FaPlus,
+  FaExternalLinkAlt,
+} from 'react-icons/fa';
 import {
   getDashboardStats,
   getRecentActivity,
@@ -25,6 +25,7 @@ import {
 import { formatCurrency, formatDate } from '../../utils/format';
 import { setDocumentMeta } from '../../utils/meta';
 import { ROUTES } from '../../app/config/constants';
+import { Button } from '../../components/ui/Button/Button';
 import styles from './DashboardPage.module.css';
 
 /**
@@ -48,7 +49,7 @@ export function DashboardPage(): React.JSX.Element {
     {
       label: 'Clientes Activos',
       value: stats.clientesActivos.toString(),
-      icon: Users,
+      icon: FaUsers,
       iconClass: styles.statIconBlue,
       trend: '+12%',
       trendUp: true,
@@ -56,7 +57,7 @@ export function DashboardPage(): React.JSX.Element {
     {
       label: 'Créditos Activos',
       value: stats.creditosActivos.toString(),
-      icon: CreditCard,
+      icon: FaCreditCard,
       iconClass: styles.statIconGreen,
       trend: '+8%',
       trendUp: true,
@@ -64,7 +65,7 @@ export function DashboardPage(): React.JSX.Element {
     {
       label: 'Monto Total',
       value: formatCurrency(stats.montoTotalCreditos),
-      icon: TrendingUp,
+      icon: FaArrowUp,
       iconClass: styles.statIconPurple,
       trend: '+23%',
       trendUp: true,
@@ -72,7 +73,7 @@ export function DashboardPage(): React.JSX.Element {
     {
       label: 'Bancos',
       value: stats.bancosActivos.toString(),
-      icon: Building2,
+      icon: FaBuilding,
       iconClass: styles.statIconOrange,
       trend: '0%',
       trendUp: true,
@@ -109,11 +110,11 @@ export function DashboardPage(): React.JSX.Element {
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'credito':
-        return CreditCard;
+        return FaCreditCard;
       case 'cliente':
-        return UserPlus;
+        return FaUserPlus;
       default:
-        return FileText;
+        return FaFileAlt;
     }
   };
 
@@ -144,9 +145,9 @@ export function DashboardPage(): React.JSX.Element {
                 className={`${styles.statTrend} ${stat.trendUp ? styles.statTrendUp : styles.statTrendDown}`}
               >
                 {stat.trendUp ? (
-                  <TrendingUp className={styles.statTrendIcon} />
+                  <FaArrowUp className={styles.statTrendIcon} />
                 ) : (
-                  <TrendingDown className={styles.statTrendIcon} />
+                  <FaArrowDown className={styles.statTrendIcon} />
                 )}
                 {stat.trend}
               </span>
@@ -158,33 +159,30 @@ export function DashboardPage(): React.JSX.Element {
 
       {/* Quick Actions */}
       <div className={styles.quickActions}>
-        <button
-          className={styles.quickActionCard}
+        <Button
+          variant="primary"
+          width="full"
           onClick={() => navigate(ROUTES.CLIENTE_NUEVO)}
+          leftIcon={<FaUserPlus />}
         >
-          <div className={styles.quickActionIcon}>
-            <UserPlus className={styles.quickActionIconSvg} />
-          </div>
-          <p className={styles.quickActionText}>Nuevo Cliente</p>
-        </button>
-        <button
-          className={styles.quickActionCard}
+          Nuevo Cliente
+        </Button>
+        <Button
+          variant="primary"
+          width="full"
           onClick={() => navigate(ROUTES.CREDITO_NUEVO)}
+          leftIcon={<FaPlus />}
         >
-          <div className={styles.quickActionIcon}>
-            <Plus className={styles.quickActionIconSvg} />
-          </div>
-          <p className={styles.quickActionText}>Nuevo Crédito</p>
-        </button>
-        <button
-          className={styles.quickActionCard}
+          Nuevo Crédito
+        </Button>
+        <Button
+          variant="primary"
+          width="full"
           onClick={() => navigate(ROUTES.BANCO_NUEVO)}
+          leftIcon={<FaBuilding />}
         >
-          <div className={styles.quickActionIcon}>
-            <Building2 className={styles.quickActionIconSvg} />
-          </div>
-          <p className={styles.quickActionText}>Nuevo Banco</p>
-        </button>
+          Nuevo Banco
+        </Button>
       </div>
 
       {/* Main Grid */}
@@ -193,20 +191,13 @@ export function DashboardPage(): React.JSX.Element {
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>Créditos Recientes</h2>
-            <button
-              className={styles.viewAllButton}
+            <Button
+              variant="ghost"
               onClick={() => navigate(ROUTES.CREDITOS)}
+              rightIcon={<FaExternalLinkAlt />}
             >
               Ver todos
-              <ArrowUpRight
-                style={{
-                  width: 14,
-                  height: 14,
-                  display: 'inline',
-                  marginLeft: 4,
-                }}
-              />
-            </button>
+            </Button>
           </div>
           <table className={styles.table}>
             <thead>
@@ -244,7 +235,7 @@ export function DashboardPage(): React.JSX.Element {
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>
-              <Clock
+              <FaClock
                 style={{
                   width: 18,
                   height: 18,

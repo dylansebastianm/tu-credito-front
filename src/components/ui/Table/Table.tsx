@@ -1,47 +1,75 @@
 import React from 'react';
-/**
- * Table Component - Tu Crédito Frontend
- * 
- * UI IMPLEMENTATION PROVIDED BY VERCEL v0 – PLACEHOLDER ONLY
- * Este componente será reemplazado cuando se integre el diseño de v0
- */
-
-import type { HTMLAttributes } from 'react';
+import type { TableHTMLAttributes } from 'react';
+import { FaSearch } from 'react-icons/fa';
 import styles from './Table.module.css';
 
-interface TableProps extends HTMLAttributes<HTMLTableElement> {
-  columns: { key: string; label: string }[];
-  data: Record<string, unknown>[];
+export type TableFilterOption = {
+  value: string;
+  label: string;
+};
+
+interface TableSearchProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+}
+
+interface TableFilterProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: TableFilterOption[];
 }
 
 /**
  * Table component
- * Tabla reutilizable para mostrar datos
+ * Tabla reutilizable (incluye search + filtro + tabla + footer)
  */
 export function Table({
-  columns,
-  data,
+  children,
+  search,
+  filter,
+  footer,
   className,
   ...props
-}: TableProps): React.JSX.Element {
+}: TableHTMLAttributes<HTMLTableElement> & {
+  children: React.ReactNode;
+  search: TableSearchProps;
+  filter: TableFilterProps;
+  footer?: React.ReactNode;
+}): React.JSX.Element {
   return (
-    <table className={`${styles.table} ${className || ''}`} {...props}>
-      <thead>
-        <tr>
-          {columns.map((column) => (
-            <th key={column.key}>{column.label}</th>
+    <div className={styles.card}>
+      <div className={styles.filters}>
+        <div className={styles.searchWrapper}>
+          <FaSearch className={styles.searchIcon} />
+          <input
+            type="text"
+            placeholder={search.placeholder}
+            value={search.value}
+            onChange={(e) => search.onChange(e.target.value)}
+            className={styles.searchInput}
+          />
+        </div>
+        <select
+          value={filter.value}
+          onChange={(e) => filter.onChange(e.target.value)}
+          className={styles.filterSelect}
+        >
+          {filter.options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
           ))}
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((row, index) => (
-          <tr key={index}>
-            {columns.map((column) => (
-              <td key={column.key}>{String(row[column.key] || '')}</td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
+        </select>
+      </div>
+
+      <div className={styles.tableWrapper}>
+        <table className={`${styles.table} ${className || ''}`} {...props}>
+          {children}
+        </table>
+      </div>
+
+      {footer ? <div className={styles.tableFooter}>{footer}</div> : null}
+    </div>
   );
 }

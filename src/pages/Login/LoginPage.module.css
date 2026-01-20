@@ -9,12 +9,13 @@
 
 .card {
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
+
 
 .header {
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
@@ -169,6 +170,7 @@
   width: 18px;
   height: 18px;
   animation: spin 1s linear infinite;
+  display: inline-block;
 }
 
 @keyframes spin {

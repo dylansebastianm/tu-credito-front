@@ -17,6 +17,10 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /* Evita el “salto” de layout entre páginas con/sin scrollbar */
+  scrollbar-gutter: stable;
+  /* Fallback para navegadores sin soporte */
+  overflow-y: scroll;
 }
 
 body {

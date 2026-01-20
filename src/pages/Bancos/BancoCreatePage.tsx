@@ -4,8 +4,8 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, X, Loader2 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { FaArrowLeft, FaSave, FaTimes } from 'react-icons/fa';
 import { setDocumentMeta } from '../../utils/meta';
 import { type MockBanco } from '../../data/mock-data';
 import { ROUTES } from '../../app/config/constants';
@@ -13,33 +13,37 @@ import styles from './Bancos.module.css';
 
 /**
  * BancoCreatePage component
- * Página de creación de banco
+ * Página de creación/edición de banco
  */
 export function BancoCreatePage(): React.JSX.Element {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isEdit = location.state?.banco !== undefined;
+  const existingBanco = location.state?.banco as MockBanco | undefined;
+
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<Partial<MockBanco>>({
-    nombre: '',
-    codigo: '',
-    direccion: '',
-    telefono: '',
-    email: '',
-    sitioWeb: '',
-    tasaInteresMin: 8,
-    tasaInteresMax: 20,
-    plazoMinimo: 6,
-    plazoMaximo: 60,
-    montoMinimo: 10000,
-    montoMaximo: 500000,
-    estado: 'activo',
+    nombre: existingBanco?.nombre || '',
+    codigo: existingBanco?.codigo || '',
+    direccion: existingBanco?.direccion || '',
+    telefono: existingBanco?.telefono || '',
+    email: existingBanco?.email || '',
+    sitioWeb: existingBanco?.sitioWeb || '',
+    tasaInteresMin: existingBanco?.tasaInteresMin || 8,
+    tasaInteresMax: existingBanco?.tasaInteresMax || 20,
+    plazoMinimo: existingBanco?.plazoMinimo || 6,
+    plazoMaximo: existingBanco?.plazoMaximo || 60,
+    montoMinimo: existingBanco?.montoMinimo || 10000,
+    montoMaximo: existingBanco?.montoMaximo || 500000,
+    estado: existingBanco?.estado || 'activo',
   });
 
   useEffect(() => {
     setDocumentMeta({
-      title: 'Nuevo Banco',
-      description: 'Crear nuevo banco',
+      title: isEdit ? 'Editar Banco' : 'Nuevo Banco',
+      description: isEdit ? 'Modificar datos del banco' : 'Crear nuevo banco',
     });
-  }, []);
+  }, [isEdit]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -57,19 +61,25 @@ export function BancoCreatePage(): React.JSX.Element {
           onClick={() => navigate(ROUTES.BANCOS)}
           className={styles.secondaryButton}
         >
-          <ArrowLeft className={styles.buttonIcon} />
+          <FaArrowLeft />
           Volver
         </button>
-        <h1 className={styles.title}>Nuevo Banco</h1>
-        <p className={styles.subtitle}>Completa los datos del nuevo banco</p>
+        <h1 className={styles.title}>
+          {isEdit ? 'Editar Banco' : 'Nuevo Banco'}
+        </h1>
+        <p className={styles.subtitle}>
+          {isEdit
+            ? 'Modifica los datos del banco'
+            : 'Completa los datos del nuevo banco'}
+        </p>
       </div>
 
       <div className={styles.formCard}>
         <div className={styles.form}>
           <div className={styles.formGrid}>
             <div className={styles.formField}>
-              <label className={`${styles.formLabel} ${styles.formLabelRequired}`}>
-                Nombre del Banco
+              <label className={styles.formLabel}>
+                Nombre del Banco <span className={styles.required}>*</span>
               </label>
               <input
                 type="text"
@@ -82,8 +92,8 @@ export function BancoCreatePage(): React.JSX.Element {
               />
             </div>
             <div className={styles.formField}>
-              <label className={`${styles.formLabel} ${styles.formLabelRequired}`}>
-                Código
+              <label className={styles.formLabel}>
+                Código <span className={styles.required}>*</span>
               </label>
               <input
                 type="text"
@@ -92,18 +102,6 @@ export function BancoCreatePage(): React.JSX.Element {
                   setFormData({ ...formData, codigo: e.target.value })
                 }
                 placeholder="Ej: BN001"
-                className={styles.formInput}
-              />
-            </div>
-            <div className={`${styles.formField} ${styles.formGroupFull}`}>
-              <label className={styles.formLabel}>Dirección</label>
-              <input
-                type="text"
-                value={formData.direccion || ''}
-                onChange={(e) =>
-                  setFormData({ ...formData, direccion: e.target.value })
-                }
-                placeholder="Dirección completa"
                 className={styles.formInput}
               />
             </div>
@@ -122,6 +120,18 @@ export function BancoCreatePage(): React.JSX.Element {
                 <option value="activo">Activo</option>
                 <option value="inactivo">Inactivo</option>
               </select>
+            </div>
+            <div className={`${styles.formField} ${styles.formFieldFull}`}>
+              <label className={styles.formLabel}>Dirección</label>
+              <input
+                type="text"
+                value={formData.direccion || ''}
+                onChange={(e) =>
+                  setFormData({ ...formData, direccion: e.target.value })
+                }
+                placeholder="Dirección completa"
+                className={styles.formInput}
+              />
             </div>
             <div className={styles.formField}>
               <label className={styles.formLabel}>Email</label>
@@ -161,23 +171,8 @@ export function BancoCreatePage(): React.JSX.Element {
             </div>
           </div>
 
-          <div
-            style={{
-              marginTop: '1.5rem',
-              paddingTop: '1.5rem',
-              borderTop: '1px solid #e5e7eb',
-            }}
-          >
-            <h3
-              style={{
-                fontSize: '1rem',
-                fontWeight: 600,
-                marginBottom: '1rem',
-                color: '#374151',
-              }}
-            >
-              Tasas de Interés
-            </h3>
+          <div className={styles.formSection}>
+            <h3 className={styles.formSectionTitle}>Tasas de Interés</h3>
             <div className={styles.formGrid}>
               <div className={styles.formField}>
                 <label className={styles.formLabel}>Tasa Mínima (%)</label>
@@ -240,23 +235,8 @@ export function BancoCreatePage(): React.JSX.Element {
             </div>
           </div>
 
-          <div
-            style={{
-              marginTop: '1.5rem',
-              paddingTop: '1.5rem',
-              borderTop: '1px solid #e5e7eb',
-            }}
-          >
-            <h3
-              style={{
-                fontSize: '1rem',
-                fontWeight: 600,
-                marginBottom: '1rem',
-                color: '#374151',
-              }}
-            >
-              Montos
-            </h3>
+          <div className={styles.formSection}>
+            <h3 className={styles.formSectionTitle}>Montos</h3>
             <div className={styles.formGrid}>
               <div className={styles.formField}>
                 <label className={styles.formLabel}>Monto Mínimo (MXN)</label>
@@ -288,33 +268,33 @@ export function BancoCreatePage(): React.JSX.Element {
               </div>
             </div>
           </div>
+        </div>
 
-          <div className={styles.formActions}>
-            <button
-              onClick={() => navigate(ROUTES.BANCOS)}
-              className={styles.secondaryButton}
-            >
-              <X className={styles.buttonIcon} />
-              Cancelar
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className={styles.primaryButton}
-            >
-              {saving ? (
-                <>
-                  <Loader2 className={`${styles.buttonIcon} ${styles.spinner}`} />
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <Save className={styles.buttonIcon} />
-                  Guardar
-                </>
-              )}
-            </button>
-          </div>
+        <div className={styles.formActions}>
+          <button
+            onClick={() => navigate(ROUTES.BANCOS)}
+            className={styles.secondaryButton}
+          >
+            <FaTimes />
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className={styles.primaryButton}
+          >
+            {saving ? (
+              <>
+                <span className={styles.spinner}></span>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <FaSave />
+                Guardar
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>

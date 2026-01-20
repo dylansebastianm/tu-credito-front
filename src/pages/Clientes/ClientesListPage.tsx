@@ -5,18 +5,17 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaPlus, FaUsers } from 'react-icons/fa';
 import {
-  Search,
-  Plus,
-  Eye,
-  Edit,
-  Trash2,
-  Users,
-} from 'lucide-react';
+  HiOutlineEye,
+  HiOutlinePencil,
+  HiOutlineTrash,
+} from 'react-icons/hi';
 import { setDocumentMeta } from '../../utils/meta';
 import { mockClientes, type MockCliente } from '../../data/mock-data';
 import { getEstadoLabel } from '../../utils/format';
 import { ROUTES } from '../../app/config/constants';
+import { Table } from '../../components/ui/Table/Table';
 import styles from './Clientes.module.css';
 
 /**
@@ -54,13 +53,13 @@ export function ClientesListPage(): React.JSX.Element {
   const getEstadoBadgeClass = (estado: string) => {
     switch (estado) {
       case 'activo':
-        return styles.badgeGreen;
+        return styles.badgeSuccess;
       case 'inactivo':
-        return styles.badgeRed;
+        return styles.badgeDanger;
       case 'pendiente':
-        return styles.badgeYellow;
+        return styles.badgeWarning;
       default:
-        return styles.badgeGray;
+        return styles.badgeDefault;
     }
   };
 
@@ -69,7 +68,7 @@ export function ClientesListPage(): React.JSX.Element {
   };
 
   const handleEdit = (cliente: MockCliente) => {
-    navigate(ROUTES.CLIENTE_DETAIL(cliente.id));
+    navigate(ROUTES.CLIENTE_NUEVO, { state: { cliente } });
   };
 
   const handleDelete = (id: string) => {
@@ -80,129 +79,120 @@ export function ClientesListPage(): React.JSX.Element {
 
   return (
     <div className={styles.container}>
+      <nav className={styles.breadcrumb}>
+        <span className={styles.breadcrumbLink} onClick={() => navigate(ROUTES.DASHBOARD)}>Inicio</span>
+        <span className={styles.breadcrumbSeparator}>/</span>
+        <span className={styles.breadcrumbCurrent}>Clientes</span>
+      </nav>
+
       <div className={styles.header}>
         <div className={styles.headerTop}>
-          <div className={styles.headerInfo}>
+          <div>
             <h1 className={styles.title}>Clientes</h1>
             <p className={styles.subtitle}>Gestión de clientes del sistema</p>
           </div>
-          <div className={styles.headerActions}>
-            <button
-              onClick={() => navigate(ROUTES.CLIENTE_NUEVO)}
-              className={styles.primaryButton}
-            >
-              <Plus className={styles.buttonIcon} />
-              Nuevo Cliente
-            </button>
-          </div>
+          <button
+            onClick={() => navigate(ROUTES.CLIENTE_NUEVO)}
+            className={styles.primaryButton}
+          >
+            <FaPlus />
+            Nuevo Cliente
+          </button>
         </div>
       </div>
 
-      <div className={styles.filters}>
-        <div className={styles.searchWrapper}>
-          <Search className={styles.searchIcon} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, email o DNI..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={`${styles.searchInput} ${styles.input}`}
-          />
-        </div>
-        <select
-          value={filterEstado}
-          onChange={(e) => setFilterEstado(e.target.value)}
-          className={`${styles.filterSelect} ${styles.select}`}
-        >
-          <option value="all">Todos los estados</option>
-          <option value="activo">Activo</option>
-          <option value="inactivo">Inactivo</option>
-          <option value="pendiente">Pendiente</option>
-        </select>
-      </div>
-
-      <div className={styles.card}>
-        <div className={styles.tableWrapper}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Ciudad</th>
-                <th>Estado</th>
-                <th>Créditos</th>
-                <th>Acciones</th>
+      <Table
+        search={{
+          value: searchTerm,
+          onChange: setSearchTerm,
+          placeholder: 'Buscar por nombre, email o DNI...',
+        }}
+        filter={{
+          value: filterEstado,
+          onChange: setFilterEstado,
+          options: [
+            { value: 'all', label: 'Todos los estados' },
+            { value: 'activo', label: 'Activo' },
+            { value: 'inactivo', label: 'Inactivo' },
+            { value: 'pendiente', label: 'Pendiente' },
+          ],
+        }}
+        footer={
+          <>Mostrando {filteredClientes.length} de {clientes.length} clientes</>
+        }
+      >
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Ciudad</th>
+            <th>Estado</th>
+            <th>Créditos</th>
+            <th style={{ textAlign: 'right' }}>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredClientes.length === 0 ? (
+            <tr>
+              <td colSpan={6}>
+                <div className={styles.emptyState}>
+                  <FaUsers className={styles.emptyIcon} />
+                  <p className={styles.emptyTitle}>No se encontraron clientes</p>
+                  <p className={styles.emptyText}>
+                    Intenta ajustar los filtros de búsqueda
+                  </p>
+                </div>
+              </td>
+            </tr>
+          ) : (
+            filteredClientes.map((cliente) => (
+              <tr key={cliente.id}>
+                <td>
+                  <div className={styles.cellPrimary}>
+                    {cliente.nombre} {cliente.apellido}
+                  </div>
+                  <div className={styles.cellCode}>{cliente.dni}</div>
+                </td>
+                <td>{cliente.email}</td>
+                <td>{cliente.ciudad}</td>
+                <td>
+                  <span
+                    className={`${styles.badge} ${getEstadoBadgeClass(cliente.estado)}`}
+                  >
+                    {getEstadoLabel(cliente.estado)}
+                  </span>
+                </td>
+                <td>{cliente.creditosActivos}</td>
+                <td>
+                  <div className={styles.actionsCell}>
+                    <button
+                      onClick={() => handleViewDetail(cliente)}
+                      className={styles.actionButton}
+                      title="Ver detalle"
+                    >
+                      <HiOutlineEye />
+                    </button>
+                    <button
+                      onClick={() => handleEdit(cliente)}
+                      className={styles.actionButton}
+                      title="Editar"
+                    >
+                      <HiOutlinePencil />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(cliente.id)}
+                      className={styles.actionButton}
+                      title="Eliminar"
+                    >
+                      <HiOutlineTrash />
+                    </button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filteredClientes.length === 0 ? (
-                <tr>
-                  <td colSpan={6}>
-                    <div className={styles.emptyState}>
-                      <Users className={styles.emptyIcon} />
-                      <p className={styles.emptyTitle}>No se encontraron clientes</p>
-                      <p className={styles.emptyText}>
-                        Intenta ajustar los filtros de búsqueda
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredClientes.map((cliente) => (
-                  <tr key={cliente.id}>
-                    <td>
-                      <div className={styles.cellPrimary}>
-                        {cliente.nombre} {cliente.apellido}
-                      </div>
-                      <div className={styles.cellSecondary}>{cliente.dni}</div>
-                    </td>
-                    <td>{cliente.email}</td>
-                    <td>{cliente.ciudad}</td>
-                    <td>
-                      <span
-                        className={`${styles.badge} ${getEstadoBadgeClass(cliente.estado)}`}
-                      >
-                        {getEstadoLabel(cliente.estado)}
-                      </span>
-                    </td>
-                    <td>{cliente.creditosActivos}</td>
-                    <td>
-                      <div className={styles.actionsCell}>
-                        <button
-                          onClick={() => handleViewDetail(cliente)}
-                          className={styles.actionButton}
-                          title="Ver detalle"
-                        >
-                          <Eye className={styles.actionIcon} />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(cliente)}
-                          className={styles.actionButton}
-                          title="Editar"
-                        >
-                          <Edit className={styles.actionIcon} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(cliente.id)}
-                          className={`${styles.actionButton} ${styles.actionButtonDanger}`}
-                          title="Eliminar"
-                        >
-                          <Trash2 className={styles.actionIcon} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className={styles.pagination}>
-          <span className={styles.paginationInfo}>
-            Mostrando {filteredClientes.length} de {clientes.length} clientes
-          </span>
-        </div>
-      </div>
+            ))
+          )}
+        </tbody>
+      </Table>
     </div>
   );
 }

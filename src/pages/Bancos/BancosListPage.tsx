@@ -5,18 +5,17 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FaPlus, FaBuilding } from 'react-icons/fa';
 import {
-  Search,
-  Plus,
-  Eye,
-  Edit,
-  Trash2,
-  Building2,
-} from 'lucide-react';
+  HiOutlineEye,
+  HiOutlinePencil,
+  HiOutlineTrash,
+} from 'react-icons/hi';
 import { setDocumentMeta } from '../../utils/meta';
 import { mockBancos, type MockBanco } from '../../data/mock-data';
 import { formatPercent, getEstadoLabel } from '../../utils/format';
 import { ROUTES } from '../../app/config/constants';
+import { Table } from '../../components/ui/Table/Table';
 import styles from './Bancos.module.css';
 
 /**
@@ -64,7 +63,7 @@ export function BancosListPage(): React.JSX.Element {
   };
 
   const handleEdit = (banco: MockBanco) => {
-    navigate(ROUTES.BANCO_DETAIL(banco.id));
+    navigate(ROUTES.BANCO_NUEVO, { state: { banco } });
   };
 
   const handleDelete = (id: string) => {
@@ -75,128 +74,122 @@ export function BancosListPage(): React.JSX.Element {
 
   return (
     <div className={styles.container}>
+      <nav className={styles.breadcrumb}>
+        <span
+          className={styles.breadcrumbLink}
+          onClick={() => navigate(ROUTES.DASHBOARD)}
+        >
+          Inicio
+        </span>
+        <span className={styles.breadcrumbSeparator}>/</span>
+        <span className={styles.breadcrumbCurrent}>Bancos</span>
+      </nav>
+
       <div className={styles.header}>
         <div className={styles.headerTop}>
-          <div className={styles.headerInfo}>
+          <div>
             <h1 className={styles.title}>Bancos</h1>
             <p className={styles.subtitle}>Gestión de bancos del sistema</p>
           </div>
-          <div className={styles.headerActions}>
-            <button
-              onClick={() => navigate(ROUTES.BANCO_NUEVO)}
-              className={styles.primaryButton}
-            >
-              <Plus className={styles.buttonIcon} />
-              Nuevo Banco
-            </button>
-          </div>
+          <button
+            onClick={() => navigate(ROUTES.BANCO_NUEVO)}
+            className={styles.primaryButton}
+          >
+            <FaPlus />
+            Nuevo Banco
+          </button>
         </div>
       </div>
 
-      <div className={styles.filters}>
-        <div className={styles.searchWrapper}>
-          <Search className={styles.searchIcon} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre o código..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={`${styles.searchInput} ${styles.input}`}
-          />
-        </div>
-        <select
-          value={filterEstado}
-          onChange={(e) => setFilterEstado(e.target.value)}
-          className={`${styles.filterSelect} ${styles.select}`}
-        >
-          <option value="all">Todos</option>
-          <option value="activo">Activo</option>
-          <option value="inactivo">Inactivo</option>
-        </select>
-      </div>
-
-      <div className={styles.card}>
-        <div className={styles.tableWrapper}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Código</th>
-                <th>Tasa Interés</th>
-                <th>Créditos</th>
-                <th>Estado</th>
-                <th>Acciones</th>
+      <Table
+        search={{
+          value: searchTerm,
+          onChange: setSearchTerm,
+          placeholder: 'Buscar por nombre o código...',
+        }}
+        filter={{
+          value: filterEstado,
+          onChange: setFilterEstado,
+          options: [
+            { value: 'all', label: 'Todos los estados' },
+            { value: 'activo', label: 'Activo' },
+            { value: 'inactivo', label: 'Inactivo' },
+          ],
+        }}
+        footer={<>Mostrando {filteredBancos.length} de {bancos.length} bancos</>}
+      >
+        <thead>
+          <tr>
+            <th>Banco</th>
+            <th>Código</th>
+            <th>Tasa de Interés</th>
+            <th>Créditos</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredBancos.length === 0 ? (
+            <tr>
+              <td colSpan={6}>
+                <div className={styles.emptyState}>
+                  <FaBuilding className={styles.emptyIcon} />
+                  <p className={styles.emptyTitle}>No se encontraron bancos</p>
+                  <p className={styles.emptyText}>
+                    Intenta ajustar los filtros de búsqueda
+                  </p>
+                </div>
+              </td>
+            </tr>
+          ) : (
+            filteredBancos.map((banco) => (
+              <tr key={banco.id}>
+                <td>
+                  <span className={styles.cellPrimary}>{banco.nombre}</span>
+                </td>
+                <td className={styles.cellCode}>{banco.codigo}</td>
+                <td>
+                  {formatPercent(banco.tasaInteresMin)} -{' '}
+                  {formatPercent(banco.tasaInteresMax)}
+                </td>
+                <td>{banco.creditosActivos}</td>
+                <td>
+                  <span
+                    className={`${styles.badge} ${getEstadoBadgeClass(banco.estado)}`}
+                  >
+                    {getEstadoLabel(banco.estado)}
+                  </span>
+                </td>
+                <td>
+                  <div className={styles.actionsCell}>
+                    <button
+                      onClick={() => handleViewDetail(banco)}
+                      className={styles.actionButton}
+                      title="Ver detalle"
+                    >
+                      <HiOutlineEye />
+                    </button>
+                    <button
+                      onClick={() => handleEdit(banco)}
+                      className={styles.actionButton}
+                      title="Editar"
+                    >
+                      <HiOutlinePencil />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(banco.id)}
+                      className={`${styles.actionButton} ${styles.actionButtonDanger}`}
+                      title="Eliminar"
+                    >
+                      <HiOutlineTrash />
+                    </button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filteredBancos.length === 0 ? (
-                <tr>
-                  <td colSpan={6}>
-                    <div className={styles.emptyState}>
-                      <Building2 className={styles.emptyIcon} />
-                      <p className={styles.emptyTitle}>No se encontraron bancos</p>
-                      <p className={styles.emptyText}>
-                        Intenta ajustar los filtros de búsqueda
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredBancos.map((banco) => (
-                  <tr key={banco.id}>
-                    <td>
-                      <div className={styles.cellPrimary}>{banco.nombre}</div>
-                    </td>
-                    <td style={{ fontFamily: 'monospace' }}>{banco.codigo}</td>
-                    <td>
-                      {formatPercent(banco.tasaInteresMin)} -{' '}
-                      {formatPercent(banco.tasaInteresMax)}
-                    </td>
-                    <td>{banco.creditosActivos}</td>
-                    <td>
-                      <span
-                        className={`${styles.badge} ${getEstadoBadgeClass(banco.estado)}`}
-                      >
-                        {getEstadoLabel(banco.estado)}
-                      </span>
-                    </td>
-                    <td>
-                      <div className={styles.actionsCell}>
-                        <button
-                          onClick={() => handleViewDetail(banco)}
-                          className={styles.actionButton}
-                          title="Ver detalle"
-                        >
-                          <Eye className={styles.actionIcon} />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(banco)}
-                          className={styles.actionButton}
-                          title="Editar"
-                        >
-                          <Edit className={styles.actionIcon} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(banco.id)}
-                          className={`${styles.actionButton} ${styles.actionButtonDanger}`}
-                          title="Eliminar"
-                        >
-                          <Trash2 className={styles.actionIcon} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className={styles.pagination}>
-          <span className={styles.paginationInfo}>
-            Mostrando {filteredBancos.length} de {bancos.length} bancos
-          </span>
-        </div>
-      </div>
+            ))
+          )}
+        </tbody>
+      </Table>
     </div>
   );
 }

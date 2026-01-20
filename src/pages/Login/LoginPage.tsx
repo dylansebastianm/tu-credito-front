@@ -5,10 +5,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, LogIn, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
+import { FaLock, FaEnvelope, FaSignInAlt, FaExclamationCircle, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { setDocumentMeta } from '../../utils/meta';
 import { authService } from '../../services/auth.service';
 import { ROUTES } from '../../app/config/constants';
+import { Button } from '../../components/ui/Button/Button';
 import styles from './LoginPage.module.css';
 
 /**
@@ -60,7 +61,7 @@ export function LoginPage(): React.JSX.Element {
       <div className={styles.card}>
         <div className={styles.header}>
           <div className={styles.logo}>
-            <Lock className={styles.logoIcon} />
+            <FaLock className={styles.logoIcon} />
           </div>
           <h1 className={styles.title}>Tu Credito</h1>
           <p className={styles.subtitle}>Sistema de Gestion de Creditos</p>
@@ -69,7 +70,7 @@ export function LoginPage(): React.JSX.Element {
         <div className={styles.body}>
           {error && (
             <div className={styles.alert}>
-              <AlertCircle className={styles.alertIcon} />
+              <FaExclamationCircle className={styles.alertIcon} />
               <p className={styles.alertText}>{error}</p>
             </div>
           )}
@@ -80,7 +81,7 @@ export function LoginPage(): React.JSX.Element {
                 Correo electronico
               </label>
               <div className={styles.inputWrapper}>
-                <Mail className={styles.inputIcon} />
+                <FaEnvelope className={styles.inputIcon} />
                 <input
                   id="email"
                   type="email"
@@ -98,7 +99,7 @@ export function LoginPage(): React.JSX.Element {
                 Contrasena
               </label>
               <div className={styles.inputWrapper}>
-                <Lock className={styles.inputIcon} />
+                <FaLock className={styles.inputIcon} />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -114,27 +115,23 @@ export function LoginPage(): React.JSX.Element {
                   className={styles.eyeButton}
                 >
                   {showPassword ? (
-                    <EyeOff className={styles.eyeIcon} />
+                    <FaEyeSlash className={styles.eyeIcon} />
                   ) : (
-                    <Eye className={styles.eyeIcon} />
+                    <FaEye className={styles.eyeIcon} />
                   )}
                 </button>
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className={styles.button}>
-              {loading ? (
-                <>
-                  <Loader2 className={styles.spinner} />
-                  Iniciando sesion...
-                </>
-              ) : (
-                <>
-                  <LogIn className={styles.buttonIcon} />
-                  Iniciar sesion
-                </>
-              )}
-            </button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={loading}
+              isLoading={loading}
+              leftIcon={!loading ? <FaSignInAlt /> : undefined}
+            >
+              {loading ? 'Iniciando sesion...' : 'Iniciar sesion'}
+            </Button>
           </form>
         </div>
 
