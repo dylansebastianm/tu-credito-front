@@ -14,6 +14,7 @@ import {
   FaSignOutAlt,
   FaBars,
   FaTimes,
+  FaDollarSign,
   FaUser,
 } from 'react-icons/fa';
 import { authService } from '../../services/auth.service';
@@ -34,6 +35,17 @@ const navItems: NavItem[] = [
   { route: ROUTES.DOCS, label: 'Documentación', icon: FaFileAlt },
 ];
 
+const routeLabels: Record<string, string> = {
+  [ROUTES.DASHBOARD]: 'Dashboard',
+  [ROUTES.CLIENTES]: 'Clientes',
+  [ROUTES.CLIENTE_NUEVO]: 'Nuevo Cliente',
+  [ROUTES.CREDITOS]: 'Créditos',
+  [ROUTES.CREDITO_NUEVO]: 'Nuevo Crédito',
+  [ROUTES.BANCOS]: 'Bancos',
+  [ROUTES.BANCO_NUEVO]: 'Nuevo Banco',
+  [ROUTES.DOCS]: 'Documentación',
+};
+
 /**
  * AuthLayout component
  * Layout con sidebar y navbar para rutas autenticadas
@@ -46,16 +58,11 @@ export function AuthLayout(): React.JSX.Element {
 
   useEffect(() => {
     // Obtener nombre de usuario
-    authService.getCurrentUser()
-      .then((user) => {
-        if (user) {
-          setUserName(user.username || 'Administrador');
-        }
-      })
-      .catch((error) => {
-        console.error('Error al obtener información del usuario:', error);
-        // Mantener el valor por defecto si falla
-      });
+    authService.getCurrentUser().then((user) => {
+      if (user) {
+        setUserName(user.username || 'Administrador');
+      }
+    });
   }, []);
 
   const handleLogout = () => {
@@ -71,6 +78,40 @@ export function AuthLayout(): React.JSX.Element {
     return path === route;
   };
 
+  const getCurrentRouteLabel = (): string => {
+    const path = location.pathname;
+    
+    if (path.startsWith('/clientes/')) {
+      if (path.includes('/nuevo')) return 'Nuevo Cliente';
+      if (path.match(/\/clientes\/\d+/)) return 'Detalle Cliente';
+      return 'Clientes';
+    }
+    
+    if (path.startsWith('/creditos/')) {
+      if (path.includes('/nuevo')) return 'Nuevo Crédito';
+      if (path.match(/\/creditos\/\d+/)) return 'Detalle Crédito';
+      return 'Créditos';
+    }
+    
+    if (path.startsWith('/bancos/')) {
+      if (path.includes('/nuevo')) return 'Nuevo Banco';
+      if (path.match(/\/bancos\/\d+/)) return 'Detalle Banco';
+      return 'Bancos';
+    }
+    
+    return routeLabels[path] || path;
+  };
+
+  const getParentRoute = (): string | null => {
+    const path = location.pathname;
+    if (path.startsWith('/clientes') && path !== '/clientes') return ROUTES.CLIENTES;
+    if (path.startsWith('/creditos') && path !== '/creditos') return ROUTES.CREDITOS;
+    if (path.startsWith('/bancos') && path !== '/bancos') return ROUTES.BANCOS;
+    return null;
+  };
+
+  const parentRoute = getParentRoute();
+
   return (
     <div className={styles.layout}>
       {/* Overlay for mobile */}
@@ -83,6 +124,9 @@ export function AuthLayout(): React.JSX.Element {
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarVisible : ''}`}>
         <div className={styles.sidebarHeader}>
           <div className={styles.logo}>
+            <div className={styles.logoIcon}>
+              <FaDollarSign className={styles.logoIconSvg} />
+            </div>
             <div className={styles.logoText}>
               <h1 className={styles.logoTitle}>Tu Credito</h1>
               <p className={styles.logoSubtitle}>Sistema de Gestion</p>
@@ -141,6 +185,23 @@ export function AuthLayout(): React.JSX.Element {
                 <FaBars className={styles.menuIcon} />
               )}
             </button>
+            <nav className={styles.breadcrumb}>
+              <Link to={ROUTES.DASHBOARD} className={styles.breadcrumbLink}>
+                Inicio
+              </Link>
+              {parentRoute && (
+                <>
+                  <span className={styles.breadcrumbSeparator}>/</span>
+                  <Link to={parentRoute} className={styles.breadcrumbLink}>
+                    {routeLabels[parentRoute]}
+                  </Link>
+                </>
+              )}
+              <span className={styles.breadcrumbSeparator}>/</span>
+              <span className={styles.breadcrumbCurrent}>
+                {getCurrentRouteLabel()}
+              </span>
+            </nav>
           </div>
         </header>
 

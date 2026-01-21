@@ -59,7 +59,7 @@ export function Input({
       if (customError) return customError;
     }
 
-    // Validación de requerido
+    // Validación de requerido - debe ejecutarse primero
     if (required && !isRequired(val)) {
       return `${label || 'Este campo'} es requerido`;
     }
@@ -67,6 +67,24 @@ export function Input({
     // Si el campo está vacío y no es requerido, no validar más
     if (!val || !val.trim()) {
       return null;
+    }
+
+    // Para campos numéricos, validar que sea un número válido
+    if (props.type === 'number') {
+      const numValue = parseFloat(val);
+      if (isNaN(numValue)) {
+        return `${label || 'Este campo'} debe ser un número válido`;
+      }
+      if (props.min !== undefined && numValue < parseFloat(String(props.min))) {
+        return `${label || 'Este campo'} debe ser mayor o igual a ${props.min}`;
+      }
+      if (props.max !== undefined && numValue > parseFloat(String(props.max))) {
+        return `${label || 'Este campo'} debe ser menor o igual a ${props.max}`;
+      }
+      // Si es requerido y el valor es 0 o negativo (y min no lo permite), validar
+      if (required && numValue <= 0 && (props.min === undefined || parseFloat(String(props.min)) > 0)) {
+        return `${label || 'Este campo'} debe ser mayor a 0`;
+      }
     }
 
     // Validaciones específicas por tipo
@@ -104,6 +122,35 @@ export function Input({
     if (props.type === 'tel' || validationType === 'phone') {
       // Remover todos los caracteres excepto números y "+"
       newValue = newValue.replace(/[^0-9+]/g, '');
+      // Crear un nuevo evento con el valor filtrado
+      const syntheticEvent = {
+        ...e,
+        target: { ...e.target, value: newValue },
+      } as ChangeEvent<HTMLInputElement>;
+      
+      // Actualizar el valor del input
+      if (e.target.value !== newValue) {
+        e.target.value = newValue;
+      }
+      
+      // Llamar al onChange con el evento modificado
+      onChange?.(syntheticEvent);
+      
+      // Validar en tiempo real si hay un error previo o si el campo es requerido y está vacío
+      if (error || (required && !newValue.trim())) {
+        const validationError = validateValue(newValue);
+        setInternalError(validationError);
+        onValidationChange?.(validationError);
+      }
+      return;
+    }
+
+    // Si es un campo numérico, solo permitir números, punto decimal y signo negativo
+    if (props.type === 'number') {
+      // Permitir números, punto decimal, signo negativo al inicio, y 'e'/'E' para notación científica
+      // Pero bloquear letras comunes que no sean parte de números válidos
+      newValue = newValue.replace(/[^0-9.\-eE]/g, '');
+      
       // Crear un nuevo evento con el valor filtrado
       const syntheticEvent = {
         ...e,
@@ -170,6 +217,13 @@ export function Input({
             if ((props.type === 'tel' || validationType === 'phone') && e.key !== '+' && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'Tab' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End' && !e.ctrlKey && !e.metaKey) {
               // Permitir solo números
               if (!/[0-9]/.test(e.key)) {
+                e.preventDefault();
+              }
+            }
+            // Para campos numéricos, prevenir letras (excepto 'e', 'E', '.', '-' que son válidos en números)
+            if (props.type === 'number' && !e.ctrlKey && !e.metaKey) {
+              const validKeys = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'];
+              if (!validKeys.includes(e.key) && !/[0-9.eE\-]/.test(e.key)) {
                 e.preventDefault();
               }
             }

@@ -416,73 +416,97 @@ export function BancoCreatePage(): React.JSX.Element {
             <h3 className={styles.formSectionTitle}>Tasas de Interés</h3>
             <div className={styles.formGrid}>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>Tasa Mínima (%)</label>
-                <input
+                <Input
+                  label="Tasa Mínima (%)"
                   type="number"
                   step="0.01"
                   min="0.01"
-                  value={formData.tasa_interes_min || ''}
-                  onChange={(e) =>
+                  value={formData.tasa_interes_min !== undefined ? String(formData.tasa_interes_min) : ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
                     setFormData({
                       ...formData,
-                      tasa_interes_min: e.target.value
-                        ? Number(e.target.value)
-                        : undefined,
-                    })
-                  }
-                  className={styles.formInput}
+                      tasa_interes_min: val ? Number(val) : undefined,
+                    });
+                    if (fieldErrors.tasa_interes_min) {
+                      setFieldErrors({ ...fieldErrors, tasa_interes_min: '' });
+                    }
+                  }}
+                  placeholder="Ej: 5.50"
+                  error={fieldErrors.tasa_interes_min || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, tasa_interes_min: error || '' });
+                  }}
                 />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>Tasa Máxima (%)</label>
-                <input
+                <Input
+                  label="Tasa Máxima (%)"
                   type="number"
                   step="0.01"
                   min="0.01"
-                  value={formData.tasa_interes_max || ''}
-                  onChange={(e) =>
+                  value={formData.tasa_interes_max !== undefined ? String(formData.tasa_interes_max) : ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
                     setFormData({
                       ...formData,
-                      tasa_interes_max: e.target.value
-                        ? Number(e.target.value)
-                        : undefined,
-                    })
-                  }
-                  className={styles.formInput}
+                      tasa_interes_max: val ? Number(val) : undefined,
+                    });
+                    if (fieldErrors.tasa_interes_max) {
+                      setFieldErrors({ ...fieldErrors, tasa_interes_max: '' });
+                    }
+                  }}
+                  placeholder="Ej: 15.75"
+                  error={fieldErrors.tasa_interes_max || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, tasa_interes_max: error || '' });
+                  }}
                 />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>Plazo Mínimo (meses)</label>
-                <input
+                <Input
+                  label="Plazo Mínimo (meses)"
                   type="number"
                   min="1"
-                  value={formData.plazo_minimo || ''}
-                  onChange={(e) =>
+                  value={formData.plazo_minimo !== undefined ? String(formData.plazo_minimo) : ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
                     setFormData({
                       ...formData,
-                      plazo_minimo: e.target.value
-                        ? Number(e.target.value)
-                        : undefined,
-                    })
-                  }
-                  className={styles.formInput}
+                      plazo_minimo: val ? Number(val) : undefined,
+                    });
+                    if (fieldErrors.plazo_minimo) {
+                      setFieldErrors({ ...fieldErrors, plazo_minimo: '' });
+                    }
+                  }}
+                  placeholder="Ej: 12"
+                  error={fieldErrors.plazo_minimo || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, plazo_minimo: error || '' });
+                  }}
                 />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>Plazo Máximo (meses)</label>
-                <input
+                <Input
+                  label="Plazo Máximo (meses)"
                   type="number"
                   min="1"
-                  value={formData.plazo_maximo || ''}
-                  onChange={(e) =>
+                  value={formData.plazo_maximo !== undefined ? String(formData.plazo_maximo) : ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
                     setFormData({
                       ...formData,
-                      plazo_maximo: e.target.value
-                        ? Number(e.target.value)
-                        : undefined,
-                    })
-                  }
-                  className={styles.formInput}
+                      plazo_maximo: val ? Number(val) : undefined,
+                    });
+                    if (fieldErrors.plazo_maximo) {
+                      setFieldErrors({ ...fieldErrors, plazo_maximo: '' });
+                    }
+                  }}
+                  placeholder="Ej: 60"
+                  error={fieldErrors.plazo_maximo || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, plazo_maximo: error || '' });
+                  }}
                 />
               </div>
             </div>
@@ -492,39 +516,51 @@ export function BancoCreatePage(): React.JSX.Element {
             <h3 className={styles.formSectionTitle}>Montos</h3>
             <div className={styles.formGrid}>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>Monto Mínimo (MXN)</label>
-                <input
+                <Input
+                  label="Monto Mínimo (USD)"
                   type="number"
                   step="0.01"
                   min="0.01"
-                  value={formData.monto_minimo || ''}
-                  onChange={(e) =>
+                  value={formData.monto_minimo !== undefined ? String(formData.monto_minimo) : ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
                     setFormData({
                       ...formData,
-                      monto_minimo: e.target.value
-                        ? Number(e.target.value)
-                        : undefined,
-                    })
-                  }
-                  className={styles.formInput}
+                      monto_minimo: val ? Number(val) : undefined,
+                    });
+                    if (fieldErrors.monto_minimo) {
+                      setFieldErrors({ ...fieldErrors, monto_minimo: '' });
+                    }
+                  }}
+                  placeholder="Ej: 1000.00"
+                  error={fieldErrors.monto_minimo || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, monto_minimo: error || '' });
+                  }}
                 />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>Monto Máximo (MXN)</label>
-                <input
+                <Input
+                  label="Monto Máximo (USD)"
                   type="number"
                   step="0.01"
                   min="0.01"
-                  value={formData.monto_maximo || ''}
-                  onChange={(e) =>
+                  value={formData.monto_maximo !== undefined ? String(formData.monto_maximo) : ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
                     setFormData({
                       ...formData,
-                      monto_maximo: e.target.value
-                        ? Number(e.target.value)
-                        : undefined,
-                    })
-                  }
-                  className={styles.formInput}
+                      monto_maximo: val ? Number(val) : undefined,
+                    });
+                    if (fieldErrors.monto_maximo) {
+                      setFieldErrors({ ...fieldErrors, monto_maximo: '' });
+                    }
+                  }}
+                  placeholder="Ej: 100000.00"
+                  error={fieldErrors.monto_maximo || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, monto_maximo: error || '' });
+                  }}
                 />
               </div>
             </div>

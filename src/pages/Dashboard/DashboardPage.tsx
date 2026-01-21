@@ -76,7 +76,8 @@ export function DashboardPage(): React.JSX.Element {
         bancosActivos: bancosRes.count,
       });
 
-      setRecentCreditos(creditosRecentRes.results);
+      // Limitar a los últimos 10 créditos
+      setRecentCreditos(creditosRecentRes.results.slice(0, 10));
     } catch (err) {
       console.error('Error loading dashboard data:', err);
     }

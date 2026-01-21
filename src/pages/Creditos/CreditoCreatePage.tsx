@@ -339,106 +339,91 @@ export function CreditoCreatePage(): React.JSX.Element {
             <h3 className={styles.formSectionTitle}>Condiciones Financieras</h3>
             <div className={styles.formGrid}>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>
-                  Pago Mínimo (MXN) <span className={styles.required}>*</span>
-                </label>
-                <div className={styles.inputWrapper}>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={formData.pago_minimo}
-                    onChange={(e) => {
-                      setFormData({ ...formData, pago_minimo: e.target.value });
-                      if (fieldErrors.pago_minimo) {
-                        setFieldErrors({ ...fieldErrors, pago_minimo: '' });
-                      }
-                    }}
-                    placeholder="0.00"
-                    className={`${styles.formInput} ${fieldErrors.pago_minimo ? styles.formInputError : ''}`}
-                    required
-                  />
-                  {fieldErrors.pago_minimo && (
-                    <span className={styles.fieldError}>{fieldErrors.pago_minimo}</span>
-                  )}
-                </div>
+                <Input
+                  label="Pago Mínimo (USD)"
+                  required
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={formData.pago_minimo ? String(formData.pago_minimo) : ''}
+                  onChange={(e) => {
+                    setFormData({ ...formData, pago_minimo: e.target.value });
+                    if (fieldErrors.pago_minimo) {
+                      setFieldErrors({ ...fieldErrors, pago_minimo: '' });
+                    }
+                  }}
+                  placeholder="Ej: 100.00"
+                  error={fieldErrors.pago_minimo || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, pago_minimo: error || '' });
+                  }}
+                />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>
-                  Pago Máximo (MXN) <span className={styles.required}>*</span>
-                </label>
-                <div className={styles.inputWrapper}>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={formData.pago_maximo}
-                    onChange={(e) => {
-                      setFormData({ ...formData, pago_maximo: e.target.value });
-                      if (fieldErrors.pago_maximo) {
-                        setFieldErrors({ ...fieldErrors, pago_maximo: '' });
-                      }
-                    }}
-                    placeholder="0.00"
-                    className={`${styles.formInput} ${fieldErrors.pago_maximo ? styles.formInputError : ''}`}
-                    required
-                  />
-                  {fieldErrors.pago_maximo && (
-                    <span className={styles.fieldError}>{fieldErrors.pago_maximo}</span>
-                  )}
-                </div>
+                <Input
+                  label="Pago Máximo (USD)"
+                  required
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={formData.pago_maximo ? String(formData.pago_maximo) : ''}
+                  onChange={(e) => {
+                    setFormData({ ...formData, pago_maximo: e.target.value });
+                    if (fieldErrors.pago_maximo) {
+                      setFieldErrors({ ...fieldErrors, pago_maximo: '' });
+                    }
+                  }}
+                  placeholder="Ej: 500.00"
+                  error={fieldErrors.pago_maximo || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, pago_maximo: error || '' });
+                  }}
+                />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>
-                  Plazo (meses) <span className={styles.required}>*</span>
-                </label>
-                <div className={styles.inputWrapper}>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.plazo_meses}
-                    onChange={(e) => {
-                      setFormData({
-                        ...formData,
-                        plazo_meses: parseInt(e.target.value, 10) || 0,
-                      });
-                      if (fieldErrors.plazo_meses) {
-                        setFieldErrors({ ...fieldErrors, plazo_meses: '' });
-                      }
-                    }}
-                    placeholder="12"
-                    className={`${styles.formInput} ${fieldErrors.plazo_meses ? styles.formInputError : ''}`}
-                    required
-                  />
-                  {fieldErrors.plazo_meses && (
-                    <span className={styles.fieldError}>{fieldErrors.plazo_meses}</span>
-                  )}
-                </div>
+                <Input
+                  label="Plazo (meses)"
+                  required
+                  type="number"
+                  min="1"
+                  value={formData.plazo_meses ? String(formData.plazo_meses) : ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData({
+                      ...formData,
+                      plazo_meses: val ? parseInt(val, 10) : 0,
+                    });
+                    if (fieldErrors.plazo_meses) {
+                      setFieldErrors({ ...fieldErrors, plazo_meses: '' });
+                    }
+                  }}
+                  placeholder="Ej: 12"
+                  error={fieldErrors.plazo_meses || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, plazo_meses: error || '' });
+                  }}
+                />
               </div>
               <div className={styles.formField}>
-                <label className={styles.formLabel}>
-                  Tasa de Interés Anual (%) <span className={styles.required}>*</span>
-                </label>
-                <div className={styles.inputWrapper}>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={formData.tasa_interes}
-                    onChange={(e) => {
-                      setFormData({ ...formData, tasa_interes: e.target.value });
-                      if (fieldErrors.tasa_interes) {
-                        setFieldErrors({ ...fieldErrors, tasa_interes: '' });
-                      }
-                    }}
-                    placeholder="12.00"
-                    className={`${styles.formInput} ${fieldErrors.tasa_interes ? styles.formInputError : ''}`}
-                    required
-                  />
-                  {fieldErrors.tasa_interes && (
-                    <span className={styles.fieldError}>{fieldErrors.tasa_interes}</span>
-                  )}
-                </div>
+                <Input
+                  label="Tasa de Interés Anual (%)"
+                  required
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={formData.tasa_interes ? String(formData.tasa_interes) : ''}
+                  onChange={(e) => {
+                    setFormData({ ...formData, tasa_interes: e.target.value });
+                    if (fieldErrors.tasa_interes) {
+                      setFieldErrors({ ...fieldErrors, tasa_interes: '' });
+                    }
+                  }}
+                  placeholder="Ej: 12.00"
+                  error={fieldErrors.tasa_interes || null}
+                  onValidationChange={(error) => {
+                    setFieldErrors({ ...fieldErrors, tasa_interes: error || '' });
+                  }}
+                />
               </div>
             </div>
 
