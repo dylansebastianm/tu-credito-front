@@ -2,7 +2,7 @@
  * Creditos List Page - Tu Crédito Frontend
  */
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaCreditCard } from 'react-icons/fa';
 import { MdVisibility, MdEdit, MdDelete } from 'react-icons/md';
@@ -47,61 +47,62 @@ export function CreditosListPage(): React.JSX.Element {
     });
   }, []);
 
+  // Función para cargar créditos
+  const loadCreditos = useCallback(async () => {
+    setError(null);
+    try {
+      // Detectar si los filtros cambiaron
+      const filtersChanged = 
+        prevFiltersRef.current.searchTerm !== searchTerm ||
+        prevFiltersRef.current.filterTipoCredito !== filterTipoCredito;
+      
+      // Si los filtros cambiaron, usar página 1; si no, usar currentPage
+      const pageToUse = filtersChanged ? 1 : currentPage;
+      
+      // Actualizar referencia de filtros anteriores
+      prevFiltersRef.current = { searchTerm, filterTipoCredito };
+      
+      // Si los filtros cambiaron, resetear currentPage
+      if (filtersChanged) {
+        setCurrentPage(1);
+      }
+      
+      const params: Parameters<typeof creditosService.getAll>[0] = {
+        page: pageToUse,
+        page_size: pageSize,
+        ordering: '-fecha_registro',
+      };
+
+      if (searchTerm.trim()) {
+        params.search = searchTerm.trim();
+      }
+
+      if (filterTipoCredito !== 'all') {
+        params.tipo_credito = filterTipoCredito as 'AUTOMOTRIZ' | 'HIPOTECARIO' | 'COMERCIAL';
+      }
+
+      const response = await creditosService.getAll(params);
+      setCreditos(response.results);
+      setTotalCount(response.count);
+    } catch (err) {
+      const errorMessage =
+        err instanceof ApiError
+          ? err.message
+          : 'Error al cargar los créditos. Por favor, intenta nuevamente.';
+      setError(errorMessage);
+      console.error('Error loading creditos:', err);
+    }
+  }, [searchTerm, filterTipoCredito, currentPage]);
+
   // Cargar créditos desde el backend
   useEffect(() => {
-    const loadCreditos = async () => {
-      setError(null);
-      try {
-        // Detectar si los filtros cambiaron
-        const filtersChanged = 
-          prevFiltersRef.current.searchTerm !== searchTerm ||
-          prevFiltersRef.current.filterTipoCredito !== filterTipoCredito;
-        
-        // Si los filtros cambiaron, usar página 1; si no, usar currentPage
-        const pageToUse = filtersChanged ? 1 : currentPage;
-        
-        // Actualizar referencia de filtros anteriores
-        prevFiltersRef.current = { searchTerm, filterTipoCredito };
-        
-        // Si los filtros cambiaron, resetear currentPage
-        if (filtersChanged) {
-          setCurrentPage(1);
-        }
-        
-        const params: Parameters<typeof creditosService.getAll>[0] = {
-          page: pageToUse,
-          page_size: pageSize,
-          ordering: '-fecha_registro',
-        };
-
-        if (searchTerm.trim()) {
-          params.search = searchTerm.trim();
-        }
-
-        if (filterTipoCredito !== 'all') {
-          params.tipo_credito = filterTipoCredito as 'AUTOMOTRIZ' | 'HIPOTECARIO' | 'COMERCIAL';
-        }
-
-        const response = await creditosService.getAll(params);
-        setCreditos(response.results);
-        setTotalCount(response.count);
-      } catch (err) {
-        const errorMessage =
-          err instanceof ApiError
-            ? err.message
-            : 'Error al cargar los créditos. Por favor, intenta nuevamente.';
-        setError(errorMessage);
-        console.error('Error loading creditos:', err);
-      }
-    };
-
     // Debounce para la búsqueda (solo cuando cambia searchTerm o filterTipoCredito)
     const timeoutId = setTimeout(() => {
       loadCreditos();
     }, searchTerm ? 500 : 0);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, filterTipoCredito, currentPage]);
+  }, [searchTerm, filterTipoCredito, currentPage, loadCreditos]);
 
   const handleViewDetail = (credito: CreditoListItem) => {
     navigate(ROUTES.CREDITO_DETAIL(credito.id.toString()));
