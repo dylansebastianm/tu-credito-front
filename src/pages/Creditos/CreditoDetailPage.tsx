@@ -89,7 +89,7 @@ export function CreditoDetailPage(): React.JSX.Element {
   }
 
   // Usar valores del backend (ya calculados)
-  const monto = parseFloat(credito.pago_maximo);
+  const monto = parseFloat(credito.monto);
   const tasaInteres = parseFloat(credito.tasa_interes);
   const cuotaMensual = parseFloat(credito.cuota_mensual);
   const montoTotal = parseFloat(credito.monto_total);
