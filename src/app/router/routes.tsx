@@ -18,7 +18,6 @@ import { CreditoDetailPage } from '../../pages/Creditos/CreditoDetailPage';
 import { BancosListPage } from '../../pages/Bancos/BancosListPage';
 import { BancoCreatePage } from '../../pages/Bancos/BancoCreatePage';
 import { BancoDetailPage } from '../../pages/Bancos/BancoDetailPage';
-import { DocsPage } from '../../pages/Docs/DocsPage';
 import { NotFoundPage } from '../../pages/NotFound/NotFoundPage';
 import { ROUTES } from '../config/constants';
 
@@ -81,10 +80,6 @@ export const router = createBrowserRouter([
       {
         path: '/bancos/:id',
         element: <BancoDetailPage />,
-      },
-      {
-        path: ROUTES.DOCS,
-        element: <DocsPage />,
       },
       {
         path: ROUTES.NOT_FOUND,

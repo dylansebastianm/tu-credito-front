@@ -12,6 +12,8 @@ Frontend profesional para el sistema de gestión de clientes, créditos y bancos
 - [Desarrollo](#desarrollo)
 - [Integración con Vercel v0](#integración-con-vercel-v0)
 - [Convenciones](#convenciones)
+- [Uso de IA](#uso-de-ia)
+- [Próximos Pasos](#próximos-pasos)
 
 ## 🚀 Características
 
@@ -90,7 +92,6 @@ VITE_API_BASE_URL=http://localhost:8000/api
 - `/bancos` - Lista de bancos (protegida)
 - `/bancos/nuevo` - Crear banco (protegida)
 - `/bancos/:id` - Detalle de banco (protegida)
-- `/docs` - Documentación (protegida)
 - `*` - Página 404 (cualquier ruta no encontrada)
 
 ## 📁 Estructura del Proyecto
@@ -124,7 +125,6 @@ frontend/
 │   │   ├── Clientes/
 │   │   ├── Creditos/
 │   │   ├── Bancos/
-│   │   ├── Docs/
 │   │   └── NotFound/
 │   ├── services/            # Servicios API
 │   │   ├── apiClient.ts
@@ -173,6 +173,11 @@ npm run preview      # Preview del build de producción
 
 # Linting
 npm run lint         # Ejecuta ESLint
+
+# Testing
+npm run test         # Ejecuta tests en modo watch
+npm run test:ui      # Ejecuta tests con interfaz gráfica
+npm run test:coverage # Ejecuta tests con cobertura
 ```
 
 ### Scripts NPM
@@ -181,6 +186,9 @@ npm run lint         # Ejecuta ESLint
 - `build`: Construye la aplicación para producción
 - `preview`: Preview local del build de producción
 - `lint`: Ejecuta ESLint
+- `test`: Ejecuta tests con Vitest (modo watch)
+- `test:ui`: Ejecuta tests con interfaz gráfica de Vitest
+- `test:coverage`: Ejecuta tests y genera reporte de cobertura
 
 ## 🎨 Integración con Vercel v0
 
@@ -300,12 +308,144 @@ En tus módulos CSS, usa media queries directamente:
 - `ApiError` para errores de API
 - Helper `getErrorMessage()` para mostrar mensajes al usuario
 
+## 🤖 Uso de IA
+
+Se utilizaron herramientas de IA (Cursor, ChatGPT, Vercel v0) de manera estratégica y selectiva en las siguientes áreas del desarrollo:
+
+1. **Diseño UX/UI con Vercel v0**
+   - Generación de componentes y páginas con diseño moderno y profesional
+   - Creación de interfaces de usuario consistentes y accesibles
+   - Diseño de layouts responsivos y componentes reutilizables
+   - **Razón**: Acelerar el proceso de diseño visual manteniendo estándares de UX/UI profesionales, permitiendo enfocarse en la lógica de negocio y funcionalidad
+
+2. **Modularización y estructuración de componentes**
+   - Asistencia en la organización de la arquitectura de componentes (UI, Domain, Pages)
+   - Refactorización de código para mejorar la separación de responsabilidades
+   - Estructuración de servicios API y utilidades
+   - **Razón**: Acelerar la implementación de patrones arquitectónicos complejos mientras se mantiene la calidad del código
+
+3. **Escritura y generación de código repetitivo**
+   - Generación de componentes UI reutilizables (Alert, Modal, ConfirmDialog)
+   - Creación de tipos TypeScript y interfaces
+   - Configuración de servicios API y manejo de errores
+   - **Razón**: Reducir tiempo en tareas repetitivas, permitiendo enfocarse en lógica de negocio y validaciones críticas
+
+4. **Documentación y comentarios**
+   - Generación de documentación técnica en README
+   - Elaboración de comentarios y docstrings consistentes
+   - Documentación de convenciones y patrones de uso
+   - **Razón**: Mantener documentación completa y profesional mientras se acelera el proceso de escritura
+
+5. **Integración y conexión de servicios**
+   - Configuración de routing y autenticación
+   - Integración de servicios API con el backend
+   - Implementación de manejo de estados globales (LoadingContext)
+   - **Razón**: Asegurar configuración correcta de componentes complejos siguiendo mejores prácticas
+
+6. **Toma de decisiones técnicas**
+   - Consulta sobre mejores prácticas para arquitectura React (Context API, Hooks)
+   - Evaluación de opciones para manejo de estado y routing
+   - Validación de patrones de diseño de componentes
+   - **Razón**: Validar decisiones técnicas contra estándares de la industria y mejores prácticas actuales
+
+7. **Resolución de errores de build y debugging**
+   - Identificación y corrección de errores de TypeScript
+   - Resolución de problemas de configuración en Vite
+   - Debugging de problemas de integración con servicios API
+   - **Razón**: Acelerar el proceso de debugging manteniendo la calidad del código
+
+8. **Mejora de UX y componentes interactivos**
+   - Implementación de componentes de confirmación (ConfirmDialog)
+   - Mejora de feedback visual (Alert, Loading states)
+   - Optimización de interacciones asíncronas
+   - **Razón**: Mejorar la experiencia de usuario con componentes modernos y accesibles
+
+#### Enfoque del uso de IA:
+
+La IA se utilizó como herramienta de **productividad y validación**, no como reemplazo del conocimiento técnico. Todas las decisiones finales, arquitectura y lógica de negocio fueron diseñadas y revisadas por el desarrollador, utilizando IA principalmente para:
+- Acelerar tareas repetitivas
+- Generar diseños UX/UI profesionales con Vercel v0
+- Validar decisiones técnicas
+- Mantener consistencia en documentación y código
+- Resolver problemas técnicos específicos
+
+Este enfoque permitió mantener la calidad y coherencia del código mientras se optimizaba el tiempo de desarrollo y se lograba un diseño visual profesional.
+
+## 🧪 Testing
+
+El proyecto usa **Vitest** como test runner, compatible con Vite y con API similar a Jest. Los tests cubren utilidades críticas, validaciones y funciones puras.
+
+### ¿Qué se está testeando?
+
+- ✅ **Utilidades de formateo** (`format.ts`): Formateo de moneda, fechas, porcentajes, cálculos financieros
+- ✅ **Manejo de errores** (`error.ts`): Extracción de mensajes de error del servidor, priorización de mensajes
+- ✅ **Validadores** (`validators.ts`): Validación de emails, campos requeridos, números positivos, rangos
+- 🔄 **Próximamente**: Componentes UI, servicios API, hooks personalizados, flujos de integración
+
+### Ejecutar Tests
+
+```bash
+# Ejecutar todos los tests (modo watch - se re-ejecutan al cambiar archivos)
+npm run test
+
+# Ejecutar tests una sola vez
+npm run test -- --run
+
+# Ejecutar tests con interfaz gráfica
+npm run test:ui
+
+# Ejecutar tests con cobertura de código
+npm run test:coverage
+
+# Ejecutar tests específicos
+npm run test -- src/tests/utils/format.test.ts
+npm run test -- -t formatCurrency  # Solo tests que contengan "formatCurrency"
+```
+
+### Estructura de Tests
+
+Los tests están organizados en `src/tests/` siguiendo la misma estructura del código fuente:
+
+```
+src/tests/
+├── setup.ts              # Configuración global de tests
+├── utils/
+│   ├── format.test.ts    # Tests de formateo (18 tests) - CRÍTICO
+│   ├── error.test.ts     # Tests de manejo de errores (13 tests) - CRÍTICO
+│   └── validators.test.ts # Tests de validaciones (12 tests)
+└── ...
+```
+
+### Prioridades de Testing
+
+1. **Crítico**: Utilidades de formateo (`format.ts`) - Errores aquí muestran datos financieros incorrectos
+2. **Crítico**: Manejo de errores (`error.ts`) - Si falla, usuarios no ven errores claros del servidor
+3. **Alto**: API Client (`apiClient.ts`) - Maneja autenticación y comunicación con backend
+4. **Alto**: Protección de rutas (`ProtectedRoute.tsx`) - Seguridad de rutas protegidas
+5. **Medio**: Validadores, formularios, componentes UI
+
+### Escribir Tests
+
+Los tests usan **Vitest** y **React Testing Library**:
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import { formatCurrency } from '@/utils/format';
+
+describe('formatCurrency', () => {
+  it('debe formatear números correctamente', () => {
+    expect(formatCurrency(1000)).toBe('$1,000.00');
+  });
+});
+```
+
 ## 🚀 Próximos Pasos
 
 - [ ] Implementar lógica real en servicios API
 - [ ] Migrar autenticación a httpOnly cookies
 - [ ] Integrar diseño de Vercel v0
-- [ ] Agregar tests (Jest/Vitest)
+- [x] Agregar tests (Vitest) - Tests críticos implementados
+- [ ] Agregar tests de API Client y ProtectedRoute
 - [ ] Configurar CI/CD
 - [ ] Optimizar bundle size
 

@@ -6,12 +6,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaBuilding } from 'react-icons/fa';
+import { FiEye, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { Breadcrumb } from '../../components/ui/Breadcrumb/Breadcrumb';
-import {
-  HiOutlineEye,
-  HiOutlinePencil,
-  HiOutlineTrash,
-} from 'react-icons/hi';
 import { setDocumentMeta } from '../../utils/meta';
 import { formatPercent, getEstadoLabel } from '../../utils/format';
 import { ROUTES } from '../../app/config/constants';
@@ -21,6 +17,8 @@ import { bancosService } from '../../services/bancos.service';
 import type { BancoListItem } from '../../types/banco';
 import styles from './Bancos.module.css';
 import { Alert } from '../../components/ui/Alert/Alert';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog/ConfirmDialog';
+import { getErrorMessage } from '../../utils/error';
 
 /**
  * BancosListPage component
@@ -36,6 +34,10 @@ export function BancosListPage(): React.JSX.Element {
   const [currentPage, setCurrentPage] = useState(1);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
+  const [errorAlertMessage, setErrorAlertMessage] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     setDocumentMeta({
@@ -90,25 +92,32 @@ export function BancosListPage(): React.JSX.Element {
     navigate(ROUTES.BANCO_NUEVO, { state: { banco } });
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('¿Está seguro de eliminar este banco?')) {
-      try {
-        await bancosService.delete(id);
-        setAlertMessage('Banco eliminado exitosamente');
-        setShowAlert(true);
-        // Recargar la lista
-        const response = await bancosService.getAll({
-          page: currentPage,
-          page_size: 20,
-          search: searchTerm || undefined,
-          estado: filterEstado !== 'all' ? (filterEstado as 'activo' | 'inactivo') : undefined,
-        });
-        setBancos(response.results);
-        setTotalCount(response.count);
-      } catch (err) {
-        alert('Error al eliminar el banco. Por favor, intenta nuevamente.');
-        console.error('Error deleting banco:', err);
-      }
+  const handleDeleteClick = (id: number) => {
+    setItemToDelete(id);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      await bancosService.delete(itemToDelete);
+      setAlertMessage('Banco eliminado exitosamente');
+      setShowAlert(true);
+      // Recargar la lista
+      const response = await bancosService.getAll({
+        page: currentPage,
+        page_size: 20,
+        search: searchTerm || undefined,
+        estado: filterEstado !== 'all' ? (filterEstado as 'activo' | 'inactivo') : undefined,
+      });
+      setBancos(response.results);
+      setTotalCount(response.count);
+    } catch (err) {
+      const errorMessage = getErrorMessage(err) || 'Error al eliminar el banco. Por favor, intenta nuevamente.';
+      setErrorAlertMessage(errorMessage);
+      setShowErrorAlert(true);
+      console.error('Error deleting banco:', err);
     }
   };
 
@@ -132,6 +141,25 @@ export function BancosListPage(): React.JSX.Element {
         title={alertMessage}
         isVisible={showAlert}
         onClose={() => setShowAlert(false)}
+      />
+      <Alert
+        type="error"
+        title={errorAlertMessage}
+        isVisible={showErrorAlert}
+        onClose={() => setShowErrorAlert(false)}
+      />
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setItemToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Banco"
+        message="¿Está seguro de eliminar este banco? Esta acción no se puede deshacer."
+        type="danger"
+        confirmText="Eliminar"
+        cancelText="Cancelar"
       />
       <div className={styles.container}>
       <Breadcrumb
@@ -237,21 +265,21 @@ export function BancosListPage(): React.JSX.Element {
                       className={styles.actionButton}
                       title="Ver detalle"
                     >
-                      <HiOutlineEye />
+                      <FiEye />
                     </button>
                     <button
                       onClick={() => handleEdit(banco)}
                       className={styles.actionButton}
                       title="Editar"
                     >
-                      <HiOutlinePencil />
+                      <FiEdit2 />
                     </button>
                     <button
-                      onClick={() => handleDelete(banco.id)}
+                      onClick={() => handleDeleteClick(banco.id)}
                       className={`${styles.actionButton} ${styles.actionButtonDanger}`}
                       title="Eliminar"
                     >
-                      <HiOutlineTrash />
+                      <FiTrash2 />
                     </button>
                   </div>
                 </td>

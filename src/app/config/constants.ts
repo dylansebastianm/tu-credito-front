@@ -14,7 +14,6 @@ export const ROUTES = {
   BANCOS: '/bancos',
   BANCO_NUEVO: '/bancos/nuevo',
   BANCO_DETAIL: (id: number | string) => `/bancos/${id}`,
-  DOCS: '/docs',
   NOT_FOUND: '*',
 } as const;
 

@@ -6,12 +6,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaUsers } from 'react-icons/fa';
+import { FiEye, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { Breadcrumb } from '../../components/ui/Breadcrumb/Breadcrumb';
-import {
-  HiOutlineEye,
-  HiOutlinePencil,
-  HiOutlineTrash,
-} from 'react-icons/hi';
 import { setDocumentMeta } from '../../utils/meta';
 import { clientesService } from '../../services/clientes.service';
 import type { ClienteListItem } from '../../types/cliente';
@@ -20,6 +16,7 @@ import { Table } from '../../components/ui/Table/Table';
 import { Pagination } from '../../components/ui/Pagination/Pagination';
 import { getErrorMessage } from '../../utils/error';
 import { Alert } from '../../components/ui/Alert/Alert';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog/ConfirmDialog';
 import styles from './Clientes.module.css';
 
 /**
@@ -36,6 +33,10 @@ export function ClientesListPage(): React.JSX.Element {
   const [currentPage, setCurrentPage] = useState(1);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [showErrorAlert, setShowErrorAlert] = useState(false);
+  const [errorAlertMessage, setErrorAlertMessage] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const pageSize = 20;
 
   useEffect(() => {
@@ -93,20 +94,24 @@ export function ClientesListPage(): React.JSX.Element {
     navigate(ROUTES.CLIENTE_NUEVO, { state: { cliente } });
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('¿Está seguro de eliminar este cliente?')) {
-      return;
-    }
+  const handleDeleteClick = (id: number) => {
+    setItemToDelete(id);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
 
     try {
-      await clientesService.delete(id);
+      await clientesService.delete(itemToDelete);
       setAlertMessage('Cliente eliminado exitosamente');
       setShowAlert(true);
       // Recargar la lista
       await loadClientes();
     } catch (err) {
       const errorMessage = getErrorMessage(err) || 'Error al eliminar el cliente. Por favor, intenta nuevamente.';
-      alert(errorMessage);
+      setErrorAlertMessage(errorMessage);
+      setShowErrorAlert(true);
       console.error('Error deleting cliente:', err);
     }
   };
@@ -134,6 +139,25 @@ export function ClientesListPage(): React.JSX.Element {
         title={alertMessage}
         isVisible={showAlert}
         onClose={() => setShowAlert(false)}
+      />
+      <Alert
+        type="error"
+        title={errorAlertMessage}
+        isVisible={showErrorAlert}
+        onClose={() => setShowErrorAlert(false)}
+      />
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setItemToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Cliente"
+        message="¿Está seguro de eliminar este cliente? Esta acción no se puede deshacer."
+        type="danger"
+        confirmText="Eliminar"
+        cancelText="Cancelar"
       />
       <div className={styles.container}>
         <Breadcrumb
@@ -237,21 +261,21 @@ export function ClientesListPage(): React.JSX.Element {
                       className={styles.actionButton}
                       title="Ver detalle"
                     >
-                      <HiOutlineEye />
+                      <FiEye />
                     </button>
                     <button
                       onClick={() => handleEdit(cliente)}
                       className={styles.actionButton}
                       title="Editar"
                     >
-                      <HiOutlinePencil />
+                      <FiEdit2 />
                     </button>
                     <button
-                      onClick={() => handleDelete(cliente.id)}
+                      onClick={() => handleDeleteClick(cliente.id)}
                       className={styles.actionButton}
                       title="Eliminar"
                     >
-                      <HiOutlineTrash />
+                      <FiTrash2 />
                     </button>
                   </div>
                 </td>

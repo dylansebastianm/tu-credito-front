@@ -6,12 +6,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaCreditCard } from 'react-icons/fa';
+import { FiEye, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { Breadcrumb } from '../../components/ui/Breadcrumb/Breadcrumb';
-import {
-  HiOutlineEye,
-  HiOutlinePencil,
-  HiOutlineTrash,
-} from 'react-icons/hi';
 import { setDocumentMeta } from '../../utils/meta';
 import { creditosService } from '../../services/creditos.service';
 import type { CreditoListItem } from '../../types/credito';
@@ -20,6 +16,7 @@ import { ROUTES } from '../../app/config/constants';
 import { Table } from '../../components/ui/Table/Table';
 import { Pagination } from '../../components/ui/Pagination/Pagination';
 import { Alert } from '../../components/ui/Alert/Alert';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog/ConfirmDialog';
 import { ApiError, getErrorMessage } from '../../utils/error';
 import styles from './Creditos.module.css';
 
@@ -97,20 +94,24 @@ export function CreditosListPage(): React.JSX.Element {
     navigate(ROUTES.CREDITO_NUEVO, { state: { credito } });
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('¿Está seguro de eliminar este crédito?')) {
-      return;
-    }
+  const handleDeleteClick = (id: number) => {
+    setItemToDelete(id);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
 
     try {
-      await creditosService.delete(id);
+      await creditosService.delete(itemToDelete);
       setAlertMessage('Crédito eliminado exitosamente');
       setShowAlert(true);
       // Recargar la lista
       await loadCreditos();
     } catch (err) {
       const errorMessage = getErrorMessage(err) || 'Error al eliminar el crédito. Por favor, intenta nuevamente.';
-      alert(errorMessage);
+      setErrorAlertMessage(errorMessage);
+      setShowErrorAlert(true);
       console.error('Error deleting credito:', err);
     }
   };
@@ -138,6 +139,25 @@ export function CreditosListPage(): React.JSX.Element {
         title={alertMessage}
         isVisible={showAlert}
         onClose={() => setShowAlert(false)}
+      />
+      <Alert
+        type="error"
+        title={errorAlertMessage}
+        isVisible={showErrorAlert}
+        onClose={() => setShowErrorAlert(false)}
+      />
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setItemToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Crédito"
+        message="¿Está seguro de eliminar este crédito? Esta acción no se puede deshacer."
+        type="danger"
+        confirmText="Eliminar"
+        cancelText="Cancelar"
       />
       <div className={styles.container}>
       <Breadcrumb
@@ -245,21 +265,21 @@ export function CreditosListPage(): React.JSX.Element {
                       className={styles.actionButton}
                       title="Ver detalle"
                     >
-                      <HiOutlineEye />
+                      <FiEye />
                     </button>
                     <button
                       onClick={() => handleEdit(credito)}
                       className={styles.actionButton}
                       title="Editar"
                     >
-                      <HiOutlinePencil />
+                      <FiEdit2 />
                     </button>
                     <button
-                      onClick={() => handleDelete(credito.id)}
+                      onClick={() => handleDeleteClick(credito.id)}
                       className={styles.actionButton}
                       title="Eliminar"
                     >
-                      <HiOutlineTrash />
+                      <FiTrash2 />
                     </button>
                   </div>
                 </td>

@@ -10,7 +10,6 @@ import {
   FaUsers,
   FaCreditCard,
   FaBuilding,
-  FaFileAlt,
   FaSignOutAlt,
   FaBars,
   FaTimes,
@@ -31,7 +30,6 @@ const navItems: NavItem[] = [
   { route: ROUTES.CLIENTES, label: 'Clientes', icon: FaUsers },
   { route: ROUTES.CREDITOS, label: 'Créditos', icon: FaCreditCard },
   { route: ROUTES.BANCOS, label: 'Bancos', icon: FaBuilding },
-  { route: ROUTES.DOCS, label: 'Documentación', icon: FaFileAlt },
 ];
 
 const routeLabels: Record<string, string> = {
@@ -42,7 +40,6 @@ const routeLabels: Record<string, string> = {
   [ROUTES.CREDITO_NUEVO]: 'Nuevo Crédito',
   [ROUTES.BANCOS]: 'Bancos',
   [ROUTES.BANCO_NUEVO]: 'Nuevo Banco',
-  [ROUTES.DOCS]: 'Documentación',
 };
 
 /**

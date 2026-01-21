@@ -43,9 +43,6 @@ export function Navbar(): React.JSX.Element {
             <Link to={ROUTES.BANCOS}>Bancos</Link>
           </li>
           <li>
-            <Link to={ROUTES.DOCS}>Docs</Link>
-          </li>
-          <li>
             <button onClick={handleLogout}>Salir</button>
           </li>
         </ul>

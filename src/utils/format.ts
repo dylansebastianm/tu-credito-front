@@ -10,7 +10,12 @@ export function formatCurrency(value: number | string, currency: string = 'USD')
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
   
   if (isNaN(numValue)) {
-    return '0.00';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(0);
   }
 
   return new Intl.NumberFormat('en-US', {
