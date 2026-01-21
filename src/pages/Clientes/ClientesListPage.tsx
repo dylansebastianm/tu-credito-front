@@ -6,7 +6,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaUsers } from 'react-icons/fa';
-import { FiEye, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { MdVisibility, MdEdit, MdDelete } from 'react-icons/md';
 import { Breadcrumb } from '../../components/ui/Breadcrumb/Breadcrumb';
 import { setDocumentMeta } from '../../utils/meta';
 import { clientesService } from '../../services/clientes.service';
@@ -261,21 +261,21 @@ export function ClientesListPage(): React.JSX.Element {
                       className={styles.actionButton}
                       title="Ver detalle"
                     >
-                      <FiEye />
+                      <MdVisibility />
                     </button>
                     <button
                       onClick={() => handleEdit(cliente)}
                       className={styles.actionButton}
                       title="Editar"
                     >
-                      <FiEdit2 />
+                      <MdEdit />
                     </button>
                     <button
                       onClick={() => handleDeleteClick(cliente.id)}
                       className={styles.actionButton}
                       title="Eliminar"
                     >
-                      <FiTrash2 />
+                      <MdDelete />
                     </button>
                   </div>
                 </td>

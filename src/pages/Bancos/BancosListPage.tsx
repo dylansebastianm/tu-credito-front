@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaBuilding } from 'react-icons/fa';
-import { FiEye, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { MdVisibility, MdEdit, MdDelete } from 'react-icons/md';
 import { Breadcrumb } from '../../components/ui/Breadcrumb/Breadcrumb';
 import { setDocumentMeta } from '../../utils/meta';
 import { formatPercent, getEstadoLabel } from '../../utils/format';
@@ -265,21 +265,21 @@ export function BancosListPage(): React.JSX.Element {
                       className={styles.actionButton}
                       title="Ver detalle"
                     >
-                      <FiEye />
+                      <MdVisibility />
                     </button>
                     <button
                       onClick={() => handleEdit(banco)}
                       className={styles.actionButton}
                       title="Editar"
                     >
-                      <FiEdit2 />
+                      <MdEdit />
                     </button>
                     <button
                       onClick={() => handleDeleteClick(banco.id)}
                       className={`${styles.actionButton} ${styles.actionButtonDanger}`}
                       title="Eliminar"
                     >
-                      <FiTrash2 />
+                      <MdDelete />
                     </button>
                   </div>
                 </td>
