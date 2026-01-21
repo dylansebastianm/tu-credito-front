@@ -2,7 +2,7 @@
  * Clientes List Page - Tu Crédito Frontend
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaUsers } from 'react-icons/fa';
 import { MdVisibility, MdEdit, MdDelete } from 'react-icons/md';
@@ -37,6 +37,7 @@ export function ClientesListPage(): React.JSX.Element {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const pageSize = 20;
+  const prevFiltersRef = useRef({ searchTerm: '', filterTipoPersona: 'all' });
 
   useEffect(() => {
     setDocumentMeta({
@@ -45,51 +46,58 @@ export function ClientesListPage(): React.JSX.Element {
     });
   }, []);
 
-  const loadClientes = useCallback(async () => {
-    setError(null);
-    try {
-      const params: Parameters<typeof clientesService.getAll>[0] = {
-        page: currentPage,
-        page_size: pageSize,
-        ordering: 'nombre_completo',
-      };
-
-      if (searchTerm.trim()) {
-        params.search = searchTerm.trim();
-      }
-
-      if (filterTipoPersona !== 'all') {
-        params.tipo_persona = filterTipoPersona as 'NATURAL' | 'JURIDICO';
-      }
-
-      const response = await clientesService.getAll(params);
-      setClientes(response.results);
-      setTotalCount(response.count);
-    } catch (err) {
-      const errorMessage = getErrorMessage(err) || 'Error al cargar los clientes. Por favor, intenta nuevamente.';
-      setError(errorMessage);
-      console.error('Error loading clientes:', err);
-    }
-  }, [searchTerm, filterTipoPersona, currentPage]);
-
-  // Resetear a página 1 cuando cambian búsqueda o filtro
+  // Cargar clientes desde el backend
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, filterTipoPersona]);
+    const loadClientes = async () => {
+      setError(null);
+      try {
+        // Detectar si los filtros cambiaron
+        const filtersChanged = 
+          prevFiltersRef.current.searchTerm !== searchTerm ||
+          prevFiltersRef.current.filterTipoPersona !== filterTipoPersona;
+        
+        // Si los filtros cambiaron, usar página 1; si no, usar currentPage
+        const pageToUse = filtersChanged ? 1 : currentPage;
+        
+        // Actualizar referencia de filtros anteriores
+        prevFiltersRef.current = { searchTerm, filterTipoPersona };
+        
+        // Si los filtros cambiaron, resetear currentPage
+        if (filtersChanged) {
+          setCurrentPage(1);
+        }
+        
+        const params: Parameters<typeof clientesService.getAll>[0] = {
+          page: pageToUse,
+          page_size: pageSize,
+          ordering: 'nombre_completo',
+        };
 
-  // Debounce para búsqueda (solo cuando cambia searchTerm o filterTipoPersona)
-  useEffect(() => {
-    const timer = setTimeout(() => {
+        if (searchTerm.trim()) {
+          params.search = searchTerm.trim();
+        }
+
+        if (filterTipoPersona !== 'all') {
+          params.tipo_persona = filterTipoPersona as 'NATURAL' | 'JURIDICO';
+        }
+
+        const response = await clientesService.getAll(params);
+        setClientes(response.results);
+        setTotalCount(response.count);
+      } catch (err) {
+        const errorMessage = getErrorMessage(err) || 'Error al cargar los clientes. Por favor, intenta nuevamente.';
+        setError(errorMessage);
+        console.error('Error loading clientes:', err);
+      }
+    };
+
+    // Debounce para la búsqueda (solo cuando cambia searchTerm o filterTipoPersona)
+    const timeoutId = setTimeout(() => {
       loadClientes();
-    }, searchTerm ? 500 : 0); // Sin debounce si searchTerm está vacío
+    }, searchTerm ? 500 : 0);
 
-    return () => clearTimeout(timer);
-  }, [searchTerm, filterTipoPersona, loadClientes]);
-
-  // Cargar cuando cambia la página (sin debounce)
-  useEffect(() => {
-    loadClientes();
-  }, [currentPage]);
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, filterTipoPersona, currentPage]);
 
   const handleViewDetail = (cliente: ClienteListItem) => {
     navigate(ROUTES.CLIENTE_DETAIL(cliente.id.toString()));

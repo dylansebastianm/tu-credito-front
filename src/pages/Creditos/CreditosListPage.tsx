@@ -2,7 +2,7 @@
  * Creditos List Page - Tu Crédito Frontend
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaCreditCard } from 'react-icons/fa';
 import { MdVisibility, MdEdit, MdDelete } from 'react-icons/md';
@@ -38,6 +38,7 @@ export function CreditosListPage(): React.JSX.Element {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const pageSize = 20;
+  const prevFiltersRef = useRef({ searchTerm: '', filterTipoCredito: 'all' });
 
   useEffect(() => {
     setDocumentMeta({
@@ -46,54 +47,61 @@ export function CreditosListPage(): React.JSX.Element {
     });
   }, []);
 
-  const loadCreditos = useCallback(async () => {
-    setError(null);
-    try {
-      const params: Parameters<typeof creditosService.getAll>[0] = {
-        page: currentPage,
-        page_size: pageSize,
-        ordering: '-fecha_registro',
-      };
-
-      if (searchTerm.trim()) {
-        params.search = searchTerm.trim();
-      }
-
-      if (filterTipoCredito !== 'all') {
-        params.tipo_credito = filterTipoCredito as 'AUTOMOTRIZ' | 'HIPOTECARIO' | 'COMERCIAL';
-      }
-
-      const response = await creditosService.getAll(params);
-      setCreditos(response.results);
-      setTotalCount(response.count);
-    } catch (err) {
-      const errorMessage =
-        err instanceof ApiError
-          ? err.message
-          : 'Error al cargar los créditos. Por favor, intenta nuevamente.';
-      setError(errorMessage);
-      console.error('Error loading creditos:', err);
-    }
-  }, [searchTerm, filterTipoCredito, currentPage]);
-
-  // Resetear a página 1 cuando cambian búsqueda o filtro
+  // Cargar créditos desde el backend
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, filterTipoCredito]);
+    const loadCreditos = async () => {
+      setError(null);
+      try {
+        // Detectar si los filtros cambiaron
+        const filtersChanged = 
+          prevFiltersRef.current.searchTerm !== searchTerm ||
+          prevFiltersRef.current.filterTipoCredito !== filterTipoCredito;
+        
+        // Si los filtros cambiaron, usar página 1; si no, usar currentPage
+        const pageToUse = filtersChanged ? 1 : currentPage;
+        
+        // Actualizar referencia de filtros anteriores
+        prevFiltersRef.current = { searchTerm, filterTipoCredito };
+        
+        // Si los filtros cambiaron, resetear currentPage
+        if (filtersChanged) {
+          setCurrentPage(1);
+        }
+        
+        const params: Parameters<typeof creditosService.getAll>[0] = {
+          page: pageToUse,
+          page_size: pageSize,
+          ordering: '-fecha_registro',
+        };
 
-  // Debounce para búsqueda (solo cuando cambia searchTerm o filterTipoCredito)
-  useEffect(() => {
-    const timer = setTimeout(() => {
+        if (searchTerm.trim()) {
+          params.search = searchTerm.trim();
+        }
+
+        if (filterTipoCredito !== 'all') {
+          params.tipo_credito = filterTipoCredito as 'AUTOMOTRIZ' | 'HIPOTECARIO' | 'COMERCIAL';
+        }
+
+        const response = await creditosService.getAll(params);
+        setCreditos(response.results);
+        setTotalCount(response.count);
+      } catch (err) {
+        const errorMessage =
+          err instanceof ApiError
+            ? err.message
+            : 'Error al cargar los créditos. Por favor, intenta nuevamente.';
+        setError(errorMessage);
+        console.error('Error loading creditos:', err);
+      }
+    };
+
+    // Debounce para la búsqueda (solo cuando cambia searchTerm o filterTipoCredito)
+    const timeoutId = setTimeout(() => {
       loadCreditos();
-    }, searchTerm ? 500 : 0); // Sin debounce si searchTerm está vacío
+    }, searchTerm ? 500 : 0);
 
-    return () => clearTimeout(timer);
-  }, [searchTerm, filterTipoCredito, loadCreditos]);
-
-  // Cargar cuando cambia la página (sin debounce)
-  useEffect(() => {
-    loadCreditos();
-  }, [currentPage]);
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, filterTipoCredito, currentPage]);
 
   const handleViewDetail = (credito: CreditoListItem) => {
     navigate(ROUTES.CREDITO_DETAIL(credito.id.toString()));

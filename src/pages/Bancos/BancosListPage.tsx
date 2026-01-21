@@ -2,7 +2,7 @@
  * Bancos List Page - Tu Crédito Frontend
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaBuilding } from 'react-icons/fa';
 import { MdVisibility, MdEdit, MdDelete } from 'react-icons/md';
@@ -37,6 +37,7 @@ export function BancosListPage(): React.JSX.Element {
   const [errorAlertMessage, setErrorAlertMessage] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+  const prevFiltersRef = useRef({ searchTerm: '', filterEstado: 'all' });
 
   useEffect(() => {
     setDocumentMeta({
@@ -46,17 +47,29 @@ export function BancosListPage(): React.JSX.Element {
   }, []);
 
   // Cargar bancos desde el backend
-  // Resetear a página 1 cuando cambian búsqueda o filtro
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, filterEstado]);
-
   useEffect(() => {
     const loadBancos = async () => {
       try {
         setError(null);
+        
+        // Detectar si los filtros cambiaron
+        const filtersChanged = 
+          prevFiltersRef.current.searchTerm !== searchTerm ||
+          prevFiltersRef.current.filterEstado !== filterEstado;
+        
+        // Si los filtros cambiaron, usar página 1; si no, usar currentPage
+        const pageToUse = filtersChanged ? 1 : currentPage;
+        
+        // Actualizar referencia de filtros anteriores
+        prevFiltersRef.current = { searchTerm, filterEstado };
+        
+        // Si los filtros cambiaron, resetear currentPage
+        if (filtersChanged) {
+          setCurrentPage(1);
+        }
+        
         const response = await bancosService.getAll({
-          page: currentPage,
+          page: pageToUse,
           page_size: 20,
           search: searchTerm || undefined,
           estado: filterEstado !== 'all' ? (filterEstado as 'activo' | 'inactivo') : undefined,

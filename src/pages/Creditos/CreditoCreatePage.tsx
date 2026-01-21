@@ -130,6 +130,10 @@ export function CreditoCreatePage(): React.JSX.Element {
       newFieldErrors.descripcion = 'La descripción es requerida';
     }
 
+    if (!isPositiveNumber(formData.monto)) {
+      newFieldErrors.monto = 'El monto es requerido y debe ser mayor a 0';
+    }
+
     if (!isPositiveNumber(formData.pago_minimo)) {
       newFieldErrors.pago_minimo = 'El pago mínimo es requerido y debe ser mayor a 0';
     }
@@ -190,11 +194,11 @@ export function CreditoCreatePage(): React.JSX.Element {
 
   // Calcular valores financieros estimados para mostrar (preview antes de guardar)
   // El backend calculará automáticamente los valores finales al guardar usando la fórmula de amortización
-  const pagoMaximoNum = parseFloat(formData.pago_maximo) || 0;
+  const montoNum = parseFloat(formData.monto) || 0;
   const tasaInteresNum = parseFloat(formData.tasa_interes) || 12;
   const cuotaMensual =
-    pagoMaximoNum > 0 && formData.plazo_meses > 0 && tasaInteresNum > 0
-      ? calculateCuotaMensual(pagoMaximoNum, tasaInteresNum, formData.plazo_meses)
+    montoNum > 0 && formData.plazo_meses > 0 && tasaInteresNum > 0
+      ? calculateCuotaMensual(montoNum, tasaInteresNum, formData.plazo_meses)
       : 0;
   const montoTotal = cuotaMensual > 0 ? calculateMontoTotal(cuotaMensual, formData.plazo_meses) : 0;
 
@@ -340,6 +344,27 @@ export function CreditoCreatePage(): React.JSX.Element {
           <div className={styles.formSection}>
             <h3 className={styles.formSectionTitle}>Condiciones Financieras</h3>
             <div className={styles.formGrid}>
+              <div className={styles.formField}>
+                <Input
+                  label="Monto del Crédito (USD)"
+                  required
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={formData.monto ? String(formData.monto) : ''}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setFormData({ ...formData, monto: e.target.value });
+                    if (fieldErrors.monto) {
+                      setFieldErrors({ ...fieldErrors, monto: '' });
+                    }
+                  }}
+                  placeholder="Ej: 100000.00"
+                  error={fieldErrors.monto || null}
+                  onValidationChange={(error: string | null) => {
+                    setFieldErrors({ ...fieldErrors, monto: error || '' });
+                  }}
+                />
+              </div>
               <div className={styles.formField}>
                 <Input
                   label="Pago Mínimo (USD)"
