@@ -32,15 +32,6 @@ const navItems: NavItem[] = [
   { route: ROUTES.BANCOS, label: 'Bancos', icon: FaBuilding },
 ];
 
-const routeLabels: Record<string, string> = {
-  [ROUTES.DASHBOARD]: 'Dashboard',
-  [ROUTES.CLIENTES]: 'Clientes',
-  [ROUTES.CLIENTE_NUEVO]: 'Nuevo Cliente',
-  [ROUTES.CREDITOS]: 'Créditos',
-  [ROUTES.CREDITO_NUEVO]: 'Nuevo Crédito',
-  [ROUTES.BANCOS]: 'Bancos',
-  [ROUTES.BANCO_NUEVO]: 'Nuevo Banco',
-};
 
 /**
  * AuthLayout component
@@ -74,39 +65,6 @@ export function AuthLayout(): React.JSX.Element {
     return path === route;
   };
 
-  const getCurrentRouteLabel = (): string => {
-    const path = location.pathname;
-    
-    if (path.startsWith('/clientes/')) {
-      if (path.includes('/nuevo')) return 'Nuevo Cliente';
-      if (path.match(/\/clientes\/\d+/)) return 'Detalle Cliente';
-      return 'Clientes';
-    }
-    
-    if (path.startsWith('/creditos/')) {
-      if (path.includes('/nuevo')) return 'Nuevo Crédito';
-      if (path.match(/\/creditos\/\d+/)) return 'Detalle Crédito';
-      return 'Créditos';
-    }
-    
-    if (path.startsWith('/bancos/')) {
-      if (path.includes('/nuevo')) return 'Nuevo Banco';
-      if (path.match(/\/bancos\/\d+/)) return 'Detalle Banco';
-      return 'Bancos';
-    }
-    
-    return routeLabels[path] || path;
-  };
-
-  const getParentRoute = (): string | null => {
-    const path = location.pathname;
-    if (path.startsWith('/clientes') && path !== '/clientes') return ROUTES.CLIENTES;
-    if (path.startsWith('/creditos') && path !== '/creditos') return ROUTES.CREDITOS;
-    if (path.startsWith('/bancos') && path !== '/bancos') return ROUTES.BANCOS;
-    return null;
-  };
-
-  const parentRoute = getParentRoute();
 
   return (
     <div className={styles.layout}>
@@ -178,23 +136,6 @@ export function AuthLayout(): React.JSX.Element {
                 <FaBars className={styles.menuIcon} />
               )}
             </button>
-            <nav className={styles.breadcrumb}>
-              <Link to={ROUTES.DASHBOARD} className={styles.breadcrumbLink}>
-                Inicio
-              </Link>
-              {parentRoute && (
-                <>
-                  <span className={styles.breadcrumbSeparator}>/</span>
-                  <Link to={parentRoute} className={styles.breadcrumbLink}>
-                    {routeLabels[parentRoute]}
-                  </Link>
-                </>
-              )}
-              <span className={styles.breadcrumbSeparator}>/</span>
-              <span className={styles.breadcrumbCurrent}>
-                {getCurrentRouteLabel()}
-              </span>
-            </nav>
           </div>
         </header>
 
