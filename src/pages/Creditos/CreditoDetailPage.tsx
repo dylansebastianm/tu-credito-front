@@ -21,21 +21,25 @@ export function CreditoDetailPage(): React.JSX.Element {
   const navigate = useNavigate();
   const [credito, setCredito] = useState<Credito | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadCredito = async () => {
       if (!id) {
         setError('ID de crédito no proporcionado');
+        setLoading(false);
         return;
       }
 
       const creditoId = parseInt(id, 10);
       if (isNaN(creditoId)) {
         setError('ID de crédito inválido');
+        setLoading(false);
         return;
       }
 
       setError(null);
+      setLoading(true);
 
       try {
         const data = await creditosService.getById(creditoId);
@@ -48,11 +52,23 @@ export function CreditoDetailPage(): React.JSX.Element {
         const errorMessage = getErrorMessage(err) || 'Error al cargar el crédito. Por favor, intenta nuevamente.';
         setError(errorMessage);
         console.error('Error loading credito:', err);
+      } finally {
+        setLoading(false);
       }
     };
 
     loadCredito();
   }, [id]);
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <p>Cargando crédito...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error || !credito) {
     return (

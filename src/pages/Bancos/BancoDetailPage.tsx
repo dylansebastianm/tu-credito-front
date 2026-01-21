@@ -20,17 +20,29 @@ export function BancoDetailPage(): React.JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [banco, setBanco] = useState<Banco | null>(null);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadBanco = async () => {
-      if (!id) return;
+      if (!id) {
+        setError('ID de banco no proporcionado');
+        setLoading(false);
+        return;
+      }
+
+      const bancoId = parseInt(id, 10);
+      if (isNaN(bancoId)) {
+        setError('ID de banco inválido');
+        setLoading(false);
+        return;
+      }
+
+      setError(null);
+      setLoading(true);
 
       try {
-        setLoading(true);
-        setError(null);
-        const bancoData = await bancosService.getById(Number(id));
+        const bancoData = await bancosService.getById(bancoId);
         setBanco(bancoData);
 
         setDocumentMeta({
@@ -48,8 +60,15 @@ export function BancoDetailPage(): React.JSX.Element {
     loadBanco();
   }, [id]);
 
-  // El loading global se muestra automáticamente durante las peticiones
-  // No mostramos nada aquí, solo el spinner global
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <p>Cargando banco...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error || !banco) {
     return (
