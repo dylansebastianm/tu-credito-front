@@ -1,6 +1,5 @@
 /**
  * Format Utilities - Tu Crédito Frontend
- * Integrado desde Vercel v0
  */
 
 /**

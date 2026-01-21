@@ -1,6 +1,5 @@
 /**
  * Bancos List Page - Tu Crédito Frontend
- * Integrado desde Vercel v0 - Adaptado para react-router-dom
  */
 
 import React, { useEffect, useState } from 'react';
@@ -208,7 +207,14 @@ export function BancosListPage(): React.JSX.Element {
         footer={
           <>
             <div style={{ marginBottom: '16px' }}>
-              Mostrando {bancos.length} de {totalCount} bancos
+              {(() => {
+                const pageSize = 20;
+                const startIndex = totalCount > 0 ? (currentPage - 1) * pageSize + 1 : 0;
+                const endIndex = Math.min(currentPage * pageSize, totalCount);
+                return totalCount > 0
+                  ? `Mostrando ${startIndex}-${endIndex} de ${totalCount} bancos`
+                  : 'No hay bancos para mostrar';
+              })()}
             </div>
             {totalCount > 20 && (
               <Pagination

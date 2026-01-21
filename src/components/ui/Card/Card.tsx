@@ -1,9 +1,6 @@
 import React from 'react';
 /**
  * Card Component - Tu Crédito Frontend
- * 
- * UI IMPLEMENTATION PROVIDED BY VERCEL v0 – PLACEHOLDER ONLY
- * Este componente será reemplazado cuando se integre el diseño de v0
  */
 
 import type { HTMLAttributes } from 'react';

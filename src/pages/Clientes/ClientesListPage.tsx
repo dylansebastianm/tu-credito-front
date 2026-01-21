@@ -1,6 +1,5 @@
 /**
  * Clientes List Page - Tu Crédito Frontend
- * Integrado desde Vercel v0 - Adaptado para react-router-dom
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -207,7 +206,13 @@ export function ClientesListPage(): React.JSX.Element {
         footer={
           <>
             <div style={{ marginBottom: '16px' }}>
-              Mostrando {clientes.length} de {totalCount} clientes
+              {(() => {
+                const startIndex = totalCount > 0 ? (currentPage - 1) * pageSize + 1 : 0;
+                const endIndex = Math.min(currentPage * pageSize, totalCount);
+                return totalCount > 0
+                  ? `Mostrando ${startIndex}-${endIndex} de ${totalCount} clientes`
+                  : 'No hay clientes para mostrar';
+              })()}
             </div>
             {totalCount > pageSize && (
               <Pagination

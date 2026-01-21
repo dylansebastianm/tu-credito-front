@@ -1,6 +1,5 @@
 /**
  * Auth Layout - Tu Crédito Frontend
- * Integrado desde Vercel v0 - Adaptado para react-router-dom
  */
 
 import React, { useState, useEffect } from 'react';

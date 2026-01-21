@@ -1,6 +1,5 @@
 /**
  * Login Page - Tu Crédito Frontend
- * Integrado desde Vercel v0
  */
 
 import React, { useEffect, useState } from 'react';

@@ -1,9 +1,6 @@
 import React from 'react';
 /**
  * Navbar Component - Tu Crédito Frontend
- * 
- * UI IMPLEMENTATION PROVIDED BY VERCEL v0 – PLACEHOLDER ONLY
- * Este componente será reemplazado cuando se integre el diseño de v0
  */
 
 import { Link, useNavigate } from 'react-router-dom';

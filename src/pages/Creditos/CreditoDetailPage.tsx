@@ -1,6 +1,5 @@
 /**
  * Credito Detail Page - Tu Crédito Frontend
- * Integrado desde Vercel v0 - Adaptado para react-router-dom
  */
 
 import React, { useEffect, useState } from 'react';
