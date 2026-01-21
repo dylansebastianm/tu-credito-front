@@ -22,7 +22,7 @@ export function ClienteDetailPage(): React.JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [cliente, setCliente] = useState<Cliente | null>(null);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -62,16 +62,40 @@ export function ClienteDetailPage(): React.JSX.Element {
     loadCliente();
   }, [id]);
 
-  // El loading global se muestra automáticamente durante las peticiones
-  // No mostramos nada aquí, solo el spinner global
+  // Mostrar estado de carga
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <p>Cargando cliente...</p>
+        </div>
+      </div>
+    );
+  }
 
-  if (error || !cliente) {
+  // Mostrar error solo si hay un error real (no solo porque cliente es null durante la carga)
+  if (error) {
     return (
       <div className={styles.container}>
         <div className={styles.errorState}>
-          <p className={styles.errorText}>
-            {error || 'Cliente no encontrado'}
-          </p>
+          <p className={styles.errorText}>{error}</p>
+          <button
+            onClick={() => navigate(ROUTES.CLIENTES)}
+            className={styles.primaryButton}
+          >
+            Volver a Clientes
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Si no hay cliente después de cargar, mostrar mensaje
+  if (!cliente) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.errorState}>
+          <p className={styles.errorText}>Cliente no encontrado</p>
           <button
             onClick={() => navigate(ROUTES.CLIENTES)}
             className={styles.primaryButton}

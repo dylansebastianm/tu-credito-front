@@ -77,18 +77,24 @@ export function CreditosListPage(): React.JSX.Element {
     }
   }, [searchTerm, filterTipoCredito, currentPage]);
 
-  // Debounce para búsqueda
+  // Resetear a página 1 cuando cambian búsqueda o filtro
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterTipoCredito]);
+
+  // Debounce para búsqueda (solo cuando cambia searchTerm o filterTipoCredito)
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (currentPage === 1) {
-        loadCreditos();
-      } else {
-        setCurrentPage(1);
-      }
+      loadCreditos();
     }, searchTerm ? 500 : 0); // Sin debounce si searchTerm está vacío
 
     return () => clearTimeout(timer);
-  }, [searchTerm, filterTipoCredito, currentPage, loadCreditos]);
+  }, [searchTerm, filterTipoCredito, loadCreditos]);
+
+  // Cargar cuando cambia la página (sin debounce)
+  useEffect(() => {
+    loadCreditos();
+  }, [currentPage]);
 
   const handleViewDetail = (credito: CreditoListItem) => {
     navigate(ROUTES.CREDITO_DETAIL(credito.id.toString()));

@@ -47,6 +47,11 @@ export function BancosListPage(): React.JSX.Element {
   }, []);
 
   // Cargar bancos desde el backend
+  // Resetear a página 1 cuando cambian búsqueda o filtro
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterEstado]);
+
   useEffect(() => {
     const loadBancos = async () => {
       try {
@@ -65,10 +70,10 @@ export function BancosListPage(): React.JSX.Element {
       }
     };
 
-    // Debounce para la búsqueda
+    // Debounce para la búsqueda (solo cuando cambia searchTerm o filterEstado)
     const timeoutId = setTimeout(() => {
       loadBancos();
-    }, 300);
+    }, searchTerm ? 300 : 0);
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm, filterEstado, currentPage]);

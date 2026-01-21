@@ -73,18 +73,24 @@ export function ClientesListPage(): React.JSX.Element {
     }
   }, [searchTerm, filterTipoPersona, currentPage]);
 
-  // Debounce para búsqueda
+  // Resetear a página 1 cuando cambian búsqueda o filtro
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterTipoPersona]);
+
+  // Debounce para búsqueda (solo cuando cambia searchTerm o filterTipoPersona)
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (currentPage === 1) {
-        loadClientes();
-      } else {
-        setCurrentPage(1);
-      }
+      loadClientes();
     }, searchTerm ? 500 : 0); // Sin debounce si searchTerm está vacío
 
     return () => clearTimeout(timer);
-  }, [searchTerm, filterTipoPersona, currentPage, loadClientes]);
+  }, [searchTerm, filterTipoPersona, loadClientes]);
+
+  // Cargar cuando cambia la página (sin debounce)
+  useEffect(() => {
+    loadClientes();
+  }, [currentPage]);
 
   const handleViewDetail = (cliente: ClienteListItem) => {
     navigate(ROUTES.CLIENTE_DETAIL(cliente.id.toString()));
