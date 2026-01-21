@@ -3,7 +3,7 @@
  * Componente que inicializa el contexto de loading en el apiClient
  */
 
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useLoading } from '../../../contexts/LoadingContext';
 import { setLoadingContext } from '../../../services/apiClient';
 

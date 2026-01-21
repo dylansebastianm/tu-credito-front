@@ -15,10 +15,11 @@ import type { ClienteListItem } from '../../types/cliente';
 import type { Banco } from '../../types/banco';
 import { formatCurrency, calculateCuotaMensual, calculateMontoTotal } from '../../utils/format';
 import { ROUTES } from '../../app/config/constants';
-import { ApiError, getErrorMessage } from '../../utils/error';
+import { getErrorMessage } from '../../utils/error';
 import { BackButton } from '../../components/ui/BackButton/BackButton';
 import { Alert } from '../../components/ui/Alert/Alert';
 import { Select } from '../../components/ui/Select/Select';
+import { Input } from '../../components/ui/Input/Input';
 import { isRequired, isPositiveNumber, isInRange } from '../../utils/validation';
 import styles from './Creditos.module.css';
 
@@ -45,6 +46,7 @@ export function CreditoCreatePage(): React.JSX.Element {
     cliente: 0,
     banco: 0,
     descripcion: '',
+    monto: '',
     pago_minimo: '',
     pago_maximo: '',
     plazo_meses: 12,
@@ -89,6 +91,7 @@ export function CreditoCreatePage(): React.JSX.Element {
             cliente: fullCredito.cliente,
             banco: fullCredito.banco,
             descripcion: fullCredito.descripcion,
+            monto: fullCredito.monto,
             pago_minimo: fullCredito.pago_minimo,
             pago_maximo: fullCredito.pago_maximo,
             plazo_meses: fullCredito.plazo_meses,
@@ -346,7 +349,7 @@ export function CreditoCreatePage(): React.JSX.Element {
                   step="0.01"
                   min="0.01"
                   value={formData.pago_minimo ? String(formData.pago_minimo) : ''}
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     setFormData({ ...formData, pago_minimo: e.target.value });
                     if (fieldErrors.pago_minimo) {
                       setFieldErrors({ ...fieldErrors, pago_minimo: '' });
@@ -354,7 +357,7 @@ export function CreditoCreatePage(): React.JSX.Element {
                   }}
                   placeholder="Ej: 100.00"
                   error={fieldErrors.pago_minimo || null}
-                  onValidationChange={(error) => {
+                  onValidationChange={(error: string | null) => {
                     setFieldErrors({ ...fieldErrors, pago_minimo: error || '' });
                   }}
                 />
@@ -367,7 +370,7 @@ export function CreditoCreatePage(): React.JSX.Element {
                   step="0.01"
                   min="0.01"
                   value={formData.pago_maximo ? String(formData.pago_maximo) : ''}
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     setFormData({ ...formData, pago_maximo: e.target.value });
                     if (fieldErrors.pago_maximo) {
                       setFieldErrors({ ...fieldErrors, pago_maximo: '' });
@@ -375,7 +378,7 @@ export function CreditoCreatePage(): React.JSX.Element {
                   }}
                   placeholder="Ej: 500.00"
                   error={fieldErrors.pago_maximo || null}
-                  onValidationChange={(error) => {
+                  onValidationChange={(error: string | null) => {
                     setFieldErrors({ ...fieldErrors, pago_maximo: error || '' });
                   }}
                 />
@@ -387,7 +390,7 @@ export function CreditoCreatePage(): React.JSX.Element {
                   type="number"
                   min="1"
                   value={formData.plazo_meses ? String(formData.plazo_meses) : ''}
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     const val = e.target.value;
                     setFormData({
                       ...formData,
@@ -399,7 +402,7 @@ export function CreditoCreatePage(): React.JSX.Element {
                   }}
                   placeholder="Ej: 12"
                   error={fieldErrors.plazo_meses || null}
-                  onValidationChange={(error) => {
+                  onValidationChange={(error: string | null) => {
                     setFieldErrors({ ...fieldErrors, plazo_meses: error || '' });
                   }}
                 />
@@ -412,7 +415,7 @@ export function CreditoCreatePage(): React.JSX.Element {
                   step="0.01"
                   min="0.01"
                   value={formData.tasa_interes ? String(formData.tasa_interes) : ''}
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     setFormData({ ...formData, tasa_interes: e.target.value });
                     if (fieldErrors.tasa_interes) {
                       setFieldErrors({ ...fieldErrors, tasa_interes: '' });
@@ -420,7 +423,7 @@ export function CreditoCreatePage(): React.JSX.Element {
                   }}
                   placeholder="Ej: 12.00"
                   error={fieldErrors.tasa_interes || null}
-                  onValidationChange={(error) => {
+                  onValidationChange={(error: string | null) => {
                     setFieldErrors({ ...fieldErrors, tasa_interes: error || '' });
                   }}
                 />

@@ -11,7 +11,7 @@ import type { Cliente } from '../../types/cliente';
 import { formatDate } from '../../utils/format';
 import { ROUTES } from '../../app/config/constants';
 import { CustomerDetailCard } from '../../components/domain/CustomerDetailCard/CustomerDetailCard';
-import { ApiError, getErrorMessage } from '../../utils/error';
+import { getErrorMessage } from '../../utils/error';
 import styles from './Clientes.module.css';
 
 /**
@@ -22,7 +22,7 @@ export function ClienteDetailPage(): React.JSX.Element {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [cliente, setCliente] = useState<Cliente | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

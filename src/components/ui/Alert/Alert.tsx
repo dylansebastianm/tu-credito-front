@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   FiCheck,
   FiX,
-  FiAlertCircle,
   FiAlertTriangle,
   FiInfo,
 } from "react-icons/fi";
